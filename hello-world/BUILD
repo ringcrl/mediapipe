@@ -1,0 +1,37 @@
+package(default_visibility = ["//visibility:public"])
+
+DEFAULT_EMSCRIPTEN_LINKOPTS = [
+#    "-flto",                            # Specify lto (has to be set on for compiler as well), to disable use: -fno-lto
+    "--bind",                           # Compiles the source code using the Embind bindings to connect C/C++ and JavaScript
+    "--closure 1",                      # Run the closure compiler
+    "-s MALLOC=emmalloc",               # Switch to using the much smaller implementation
+    "-s ALLOW_MEMORY_GROWTH=1",         # Our example doesn't need memory growth
+    "-s USE_PTHREADS=1",                # Disable pthreads
+    "-s ASSERTIONS=0",                  # Turn off assertions
+    "-s EXPORT_ES6=1",                  # Export as es6 module, used for rollup
+    "-s MODULARIZE=1",                  # Allows us to manually invoke the initializatio of wasm
+    "-s EXPORT_NAME=createModule",      # Not used, but good to specify
+    "-s USE_ES6_IMPORT_META=0",         # Disable loading from import meta since we use rollup
+    "-s SINGLE_FILE=1",                 # Pack all webassembly into base64
+    "-s DISABLE_EXCEPTION_CATCHING=1",  # Disable all exception catching
+    "-s NODEJS_CATCH_EXIT=0",           # We don't have a 'main' so disable exit() catching
+]
+
+WASM_LINKOPTS = [
+    "-s WASM=1",                    # Specify wasm output
+]
+
+cc_binary(
+    name = "hello-world-wasm.js",
+    srcs = ["main.cpp"],
+    linkopts = DEFAULT_EMSCRIPTEN_LINKOPTS + WASM_LINKOPTS,
+    deps = [
+        "//hello-world/cpp:greet",
+#       "//mediapipe/calculators/core:constant_side_packet_calculator",
+#        "//mediapipe/calculators/core:flow_limiter_calculator",
+#        "//mediapipe/graphs/hand_tracking/subgraphs:hand_renderer_gpu",
+#        "//mediapipe/modules/hand_landmark:hand_landmark_tracking_gpu",
+
+    ],
+)
+

@@ -195,7 +195,7 @@ http_archive(
 new_local_repository(
     name = "linux_opencv",
     build_file = "@//third_party:opencv_linux.BUILD",
-    path = "/usr",
+    path = "/usr/local",
 )
 
 new_local_repository(
@@ -392,3 +392,7 @@ load("@org_tensorflow//tensorflow:workspace3.bzl", "tf_workspace3")
 tf_workspace3()
 load("@org_tensorflow//tensorflow:workspace2.bzl", "tf_workspace2")
 tf_workspace2()
+
+load("//wasm_toolchain:cc_toolchain_config.bzl", "emsdk_configure")
+
+emsdk_configure(name = "emsdk")
