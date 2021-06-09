@@ -1,11 +1,13 @@
 package(default_visibility = ["//visibility:public"])
+load("@rules_cc//cc:defs.bzl", "cc_binary")
+load("@emsdk//emscripten_toolchain:wasm_rules.bzl", "wasm_cc_binary")
 
 DEFAULT_EMSCRIPTEN_LINKOPTS = [
 #    "-flto",                            # Specify lto (has to be set on for compiler as well), to disable use: -fno-lto
     "--bind",                           # Compiles the source code using the Embind bindings to connect C/C++ and JavaScript
     "--closure 1",                      # Run the closure compiler
     "-s MALLOC=emmalloc",               # Switch to using the much smaller implementation
-    "-s ALLOW_MEMORY_GROWTH=1",         # Our example doesn't need memory growth
+    "-s ALLOW_MEMORY_GROWTH=0",         # Our example doesn't need memory growth
     "-s USE_PTHREADS=1",                # Disable pthreads
     "-s ASSERTIONS=0",                  # Turn off assertions
     "-s EXPORT_ES6=1",                  # Export as es6 module, used for rollup
@@ -24,14 +26,18 @@ WASM_LINKOPTS = [
 cc_binary(
     name = "hello-world-wasm.js",
     srcs = ["main.cpp"],
-    linkopts = DEFAULT_EMSCRIPTEN_LINKOPTS + WASM_LINKOPTS,
+    #    linkopts = DEFAULT_EMSCRIPTEN_LINKOPTS + WASM_LINKOPTS,
     deps = [
         "//hello-world/cpp:greet",
 #       "//mediapipe/calculators/core:constant_side_packet_calculator",
 #        "//mediapipe/calculators/core:flow_limiter_calculator",
 #        "//mediapipe/graphs/hand_tracking/subgraphs:hand_renderer_gpu",
-#        "//mediapipe/modules/hand_landmark:hand_landmark_tracking_gpu",
+        "//mediapipe/modules/hand_landmark:hand_landmark_tracking_gpu",
 
     ],
 )
 
+# wasm_cc_binary(
+#    name = "hello-world-wasm.js",
+#    cc_target = ":hello-world",
+#)
