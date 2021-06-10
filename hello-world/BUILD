@@ -26,14 +26,31 @@ WASM_LINKOPTS = [
 cc_binary(
     name = "hello-world-wasm.js",
     srcs = ["main.cpp"],
-    #    linkopts = DEFAULT_EMSCRIPTEN_LINKOPTS + WASM_LINKOPTS,
+#    linkopts = DEFAULT_EMSCRIPTEN_LINKOPTS + WASM_LINKOPTS,
     deps = [
         "//hello-world/cpp:greet",
 #       "//mediapipe/calculators/core:constant_side_packet_calculator",
-#        "//mediapipe/calculators/core:flow_limiter_calculator",
-#        "//mediapipe/graphs/hand_tracking/subgraphs:hand_renderer_gpu",
-        "//mediapipe/modules/hand_landmark:hand_landmark_tracking_gpu",
-
+#       "//mediapipe/calculators/core:flow_limiter_calculator",
+#       "//mediapipe/graphs/hand_tracking/subgraphs:hand_renderer_gpu",
+        "//mediapipe/calculators/core:gate_calculator_cc_proto",
+        "//mediapipe/framework:counter",
+        "//mediapipe/framework:port",
+        "//mediapipe/framework/port:integral_types",
+        "@com_google_absl//absl/time",
+#        "//third_party:glog",
+#        "//mediapipe/framework/port:logging",
+#        "//mediapipe/framework/deps:map_util",
+#        "//mediapipe/framework/port:map_util"
+#        "//mediapipe/framework/port:map_util"
+#        "//mediapipe/framework:counter_factory",
+#        "//mediapipe/framework:calculator_state",
+#        "//mediapipe/framework:calculator_context",
+#        "//mediapipe/framework:calculator_base",
+#        "//mediapipe/framework:calculator_framework",
+#       "//mediapipe/calculators/core:gate_calculator",
+#       "//mediapipe/modules/hand_landmark:hand_landmark_gpu",
+#       "//mediapipe/modules/hand_landmark:hand_landmark_tracking_gpu",
+#"//visibility:public"
     ],
 )
 

@@ -137,7 +137,7 @@ cc_library(
     name = "map_util",
     hdrs = ["map_util.h"],
     # Use this library through "mediapipe/framework/port:map_util".
-    visibility = ["//mediapipe/framework/port:__pkg__"],
+    visibility = ["//visibility:public"],
     deps = ["//mediapipe/framework/port:logging"],
 )
 

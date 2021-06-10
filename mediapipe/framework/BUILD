@@ -155,7 +155,7 @@ cc_library(
     srcs = ["calculator_base.cc"],
     hdrs = ["calculator_base.h"],
     visibility = [
-        ":mediapipe_internal",
+        "//visibility:public",
     ],
     deps = [
         ":calculator_context",
@@ -173,7 +173,7 @@ cc_library(
     name = "calculator_context",
     srcs = ["calculator_context.cc"],
     hdrs = ["calculator_context.h"],
-    visibility = [":mediapipe_internal"],
+    visibility = ["//visibility:public"],
     deps = [
         ":calculator_state",
         ":counter",
@@ -459,7 +459,7 @@ cc_library(
     name = "calculator_state",
     srcs = ["calculator_state.cc"],
     hdrs = ["calculator_state.h"],
-    visibility = [":mediapipe_internal"],
+    visibility = ["//visibility:public"],
     deps = [
         ":counter",
         ":counter_factory",
@@ -960,11 +960,12 @@ cc_library(
         ],
     }),
     visibility = [
-        "//mediapipe/calculators:__subpackages__",
-        "//mediapipe/framework:__subpackages__",
-        "//mediapipe/framework/port:__pkg__",
-        "//mediapipe/gpu:__pkg__",
-        "//mediapipe/util:__subpackages__",
+        "//visibility:public",
+#        "//mediapipe/calculators:__subpackages__",
+#        "//mediapipe/framework:__subpackages__",
+#        "//mediapipe/framework/port:__pkg__",
+#        "//mediapipe/gpu:__pkg__",
+#        "//mediapipe/util:__subpackages__",
     ],
 )
 
