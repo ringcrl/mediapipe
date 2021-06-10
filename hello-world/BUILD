@@ -36,8 +36,8 @@ cc_binary(
         "//mediapipe/framework:counter",
         "//mediapipe/framework:port",
         "//mediapipe/framework/port:integral_types",
+        "//third_party:glog",
         "@com_google_absl//absl/time",
-#        "//third_party:glog",
 #        "//mediapipe/framework/port:logging",
 #        "//mediapipe/framework/deps:map_util",
 #        "//mediapipe/framework/port:map_util"
