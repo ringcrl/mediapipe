@@ -286,7 +286,7 @@ cc_library(
         "scheduler.h",
     ],
     visibility = [
-        ":mediapipe_internal",
+        "//visibility:public",
     ],
     deps = [
         ":calculator_base",

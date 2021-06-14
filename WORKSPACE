@@ -17,21 +17,27 @@ load("@bazel_skylib//lib:versions.bzl", "versions")
 versions.check(minimum_bazel_version = "3.7.2")
 
 # ABSL cpp library lts_2020_09_23
-http_archive(
+# http_archive(
+#     name = "com_google_absl",
+#     urls = [
+#         "https://github.com/abseil/abseil-cpp/archive/20200923.tar.gz",
+#     ],
+#     # Remove after https://github.com/abseil/abseil-cpp/issues/326 is solved.
+#     patches = [
+#         "@//third_party:com_google_absl_f863b622fe13612433fdf43f76547d5edda0c93001.diff"
+#     ],
+#     patch_args = [
+#         "-p1",
+#     ],
+#     strip_prefix = "abseil-cpp-20200923",
+#     sha256 = "b3744a4f7a249d5eaf2309daad597631ce77ea62e0fc6abffbab4b4c3dc0fc08"
+# )
+
+local_repository(
     name = "com_google_absl",
-    urls = [
-        "https://github.com/abseil/abseil-cpp/archive/20200923.tar.gz",
-    ],
-    # Remove after https://github.com/abseil/abseil-cpp/issues/326 is solved.
-    patches = [
-        "@//third_party:com_google_absl_f863b622fe13612433fdf43f76547d5edda0c93001.diff"
-    ],
-    patch_args = [
-        "-p1",
-    ],
-    strip_prefix = "abseil-cpp-20200923",
-    sha256 = "b3744a4f7a249d5eaf2309daad597631ce77ea62e0fc6abffbab4b4c3dc0fc08"
+    path = "/home/pinku/work/src/github.com/google/abseil-cpp",
 )
+
 
 http_archive(
     name = "rules_cc",

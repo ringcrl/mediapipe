@@ -23,9 +23,13 @@ WASM_LINKOPTS = [
     "-s WASM=1",                    # Specify wasm output
 ]
 
+# notes
+# warning: Link with `-s LLD_REPORT_UNDEFINED` to get more information on undefined symbols
+
 cc_binary(
     name = "hello-world-wasm.js",
     srcs = ["main.cpp"],
+    linkopts = ["-s USE_PTHREADS=0", "-s ALLOW_MEMORY_GROWTH=0", "-s ERROR_ON_UNDEFINED_SYMBOLS=0"],
 #    linkopts = DEFAULT_EMSCRIPTEN_LINKOPTS + WASM_LINKOPTS,
     deps = [
         "//hello-world/cpp:greet",
@@ -38,19 +42,45 @@ cc_binary(
         "//mediapipe/framework/port:integral_types",
         "//third_party:glog",
         "@com_google_absl//absl/time",
-#        "//mediapipe/framework/port:logging",
-#        "//mediapipe/framework/deps:map_util",
-#        "//mediapipe/framework/port:map_util"
-#        "//mediapipe/framework/port:map_util"
-#        "//mediapipe/framework:counter_factory",
-#        "//mediapipe/framework:calculator_state",
-#        "//mediapipe/framework:calculator_context",
-#        "//mediapipe/framework:calculator_base",
-#        "//mediapipe/framework:calculator_framework",
-#       "//mediapipe/calculators/core:gate_calculator",
-#       "//mediapipe/modules/hand_landmark:hand_landmark_gpu",
+        "//mediapipe/framework/port:logging",
+        "//mediapipe/framework/deps:map_util",
+        "//mediapipe/framework/port:map_util",
+        "//mediapipe/framework:counter_factory",
+        "//mediapipe/framework:calculator_state",
+        "//mediapipe/framework:calculator_context",
+        "//mediapipe/framework:calculator_base",
+        "//mediapipe/framework:calculator_graph",
+        "//mediapipe/framework:calculator_framework",
+        "//mediapipe/calculators/core:gate_calculator",
+        "//mediapipe/calculators/core:split_vector_calculator",
+        "//mediapipe/framework/api2:node",
+        "//mediapipe/framework/formats:image_frame",
+        "//mediapipe/framework/formats:rect_cc_proto",
+        "//mediapipe/framework/port:ret_check",
+        "//mediapipe/gpu:gpu_origin_cc_proto",
+        "//mediapipe/calculators/tensor:image_to_tensor_converter",
+        "//mediapipe/calculators/tensor:image_to_tensor_utils",
+        "//mediapipe/framework/formats:image",
+        "//mediapipe/framework/formats:image_format_cc_proto",
+        "//mediapipe/framework/formats:tensor",
+        "//mediapipe/framework/port:status",
+        "//mediapipe/framework/port:statusor",
+        "//mediapipe/calculators/tensor:image_to_tensor_calculator_gpu_deps",
+        "//mediapipe/calculators/util:thresholding_calculator",
+        "//mediapipe/calculators/util:landmark_projection_calculator",
+        "//mediapipe/calculators/tensor:tensors_to_landmarks_calculator",
+        "//mediapipe/calculators/tensor:tensors_to_floats_calculator",
+        "//mediapipe/framework/port:opencv_core",
+#        "//mediapipe/framework/formats:image_opencv",
+#        "//mediapipe/framework/port:opencv_imgproc",
+#        "//mediapipe/calculators/tensor:image_to_tensor_converter_opencv",
+#        "//mediapipe/calculators/tensor:inference_calculator",
+#        "//mediapipe/calculators/tensor:tensors_to_classification_calculator",
+#        "//mediapipe/calculators/util:landmark_letterbox_removal_calculator",
+#        "//mediapipe/calculators/tensor:image_to_tensor_calculator",
+#        "//mediapipe/modules/hand_landmark:hand_landmark_gpu",
 #       "//mediapipe/modules/hand_landmark:hand_landmark_tracking_gpu",
-#"//visibility:public"
+#    visibility = ["//visibility:public"],
     ],
 )
 
@@ -58,3 +88,5 @@ cc_binary(
 #    name = "hello-world-wasm.js",
 #    cc_target = ":hello-world",
 #)
+
+

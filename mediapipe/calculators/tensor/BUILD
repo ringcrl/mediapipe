@@ -506,6 +506,11 @@ cc_library(
             "//mediapipe/gpu:gl_calculator_helper",
             "//mediapipe/gpu:gpu_buffer",
         ],
+        "//mediapipe:emscripten_wasm": [
+            ":image_to_tensor_converter_gl_buffer",
+            "//mediapipe/gpu:gl_calculator_helper",
+            "//mediapipe/gpu:gpu_buffer",
+        ],
         "//mediapipe:apple": [
             ":image_to_tensor_converter_metal",
             "//mediapipe/gpu:gl_calculator_helper",
@@ -518,6 +523,7 @@ cc_library(
             "//mediapipe/gpu:gpu_buffer",
         ],
     }),
+    visibility = ["//visibility:public"],
 )
 
 mediapipe_proto_library(
@@ -605,6 +611,7 @@ cc_library(
         ],
         "//conditions:default": [],
     }),
+    visibility = ["//visibility:public"],
     deps = [
         ":image_to_tensor_converter",
         ":image_to_tensor_utils",
