@@ -193,7 +193,7 @@ cc_library(
     name = "calculator_context_manager",
     srcs = ["calculator_context_manager.cc"],
     hdrs = ["calculator_context_manager.h"],
-    visibility = [":mediapipe_internal"],
+    visibility = ["//visibility:public"],
     deps = [
         ":calculator_context",
         ":calculator_state",
@@ -379,7 +379,7 @@ cc_library(
     name = "calculator_node",
     srcs = ["calculator_node.cc"],
     hdrs = ["calculator_node.h"],
-    visibility = [":mediapipe_internal"],
+    visibility = ["//visibility:public"],
     deps = [
         ":calculator_base",
         ":calculator_context",
@@ -488,7 +488,7 @@ cc_library(
 cc_library(
     name = "collection",
     hdrs = ["collection.h"],
-    visibility = [":mediapipe_internal"],
+    visibility = ["//visibility:public"],
     deps = [
         ":collection_item_id",
         ":type_map",
@@ -650,10 +650,7 @@ cc_library(
     name = "input_stream_handler",
     srcs = ["input_stream_handler.cc"],
     hdrs = ["input_stream_handler.h"],
-    visibility = [
-        ":mediapipe_internal",
-        "//research/interaction/mediapipe/calculators:__pkg__",
-    ],
+    visibility = ["//visibility:public"],
     deps = [
         ":calculator_context",
         ":calculator_context_manager",
@@ -678,7 +675,7 @@ cc_library(
     name = "input_stream_manager",
     srcs = ["input_stream_manager.cc"],
     hdrs = ["input_stream_manager.h"],
-    visibility = [":mediapipe_internal"],
+    visibility = ["//visibility:public"],
     deps = [
         ":packet",
         ":packet_type",
@@ -699,7 +696,7 @@ cc_library(
     name = "input_stream_shard",
     srcs = ["input_stream_shard.cc"],
     hdrs = ["input_stream_shard.h"],
-    visibility = [":mediapipe_internal"],
+    visibility = ["//visibility:public"],
     deps = [
         ":input_stream",
         ":packet",
@@ -767,9 +764,7 @@ cc_library(
     name = "output_stream_handler",
     srcs = ["output_stream_handler.cc"],
     hdrs = ["output_stream_handler.h"],
-    visibility = [
-        ":mediapipe_internal",
-    ],
+    visibility = ["//visibility:public"],
     deps = [
         ":calculator_context_manager",
         ":collection",
@@ -793,7 +788,7 @@ cc_library(
     name = "output_stream_manager",
     srcs = ["output_stream_manager.cc"],
     hdrs = ["output_stream_manager.h"],
-    visibility = [":mediapipe_internal"],
+    visibility = ["//visibility:public"],
     deps = [
         ":input_stream_handler",
         ":output_stream_shard",
@@ -820,7 +815,7 @@ cc_library(
     name = "output_stream_shard",
     srcs = ["output_stream_shard.cc"],
     hdrs = ["output_stream_shard.h"],
-    visibility = [":mediapipe_internal"],
+    visibility = ["//visibility:public"],
     deps = [
         ":output_stream",
         ":packet",

@@ -56,6 +56,7 @@ alias(
     actual = select({
         "//conditions:default": ":graph_profiler_default_on",
     }),
+    visibility = ["//visibility:public"],
 )
 
 alias(
