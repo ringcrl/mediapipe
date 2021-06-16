@@ -3,6 +3,9 @@
 
 #include <string>
 
+#define popen() { LOG(ERROR) << "popen should never be called on web."; return NULL; }
+
+
 namespace HelloWorld {
 
     class Greet {

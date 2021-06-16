@@ -25,6 +25,7 @@ package_group(
     name = "mediapipe_internal",
     packages = [
         "//mediapipe/...",
+        "//hello-world/..."
     ],
 )
 

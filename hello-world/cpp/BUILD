@@ -7,3 +7,13 @@ cc_library(
     srcs = ["greet.cpp"],
     hdrs = ["greet.hpp"]
 )
+
+
+cc_library(
+    name = "popen",
+    srcs = ["popen.cc"],
+    hdrs = ["popen.hpp"],
+    deps = [
+        "//mediapipe/framework/port:status",
+    ]
+)
