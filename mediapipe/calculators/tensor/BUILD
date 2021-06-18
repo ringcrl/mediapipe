@@ -71,6 +71,7 @@ cc_library(
         "@org_tensorflow//tensorflow/lite/kernels:builtin_ops",
     ],
     alwayslink = 1,
+    visibility = ["//visibility:public"],
 )
 
 cc_library(
@@ -115,6 +116,7 @@ cc_library(
         "@org_tensorflow//tensorflow/lite/delegates/gpu/metal:buffer_convert",
     ],
     alwayslink = 1,
+    visibility = ["//visibility:public"],
 )
 
 cc_library(
@@ -143,6 +145,7 @@ cc_library(
         "//mediapipe:android": ["@org_tensorflow//tensorflow/lite/delegates/nnapi:nnapi_delegate"],
     }),
     alwayslink = 1,
+    visibility = ["//visibility:public"],
 )
 
 cc_library(
@@ -162,6 +165,7 @@ cc_library(
     ] + select({
         "//conditions:default": [":inference_calculator_gl_if_compute_shader_available"],
         "//mediapipe:ios": [":inference_calculator_metal"],
+        "//mediapipe:emscripten_wasm": [],
     }),
     alwayslink = 1,
 )

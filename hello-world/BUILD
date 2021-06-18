@@ -34,9 +34,8 @@ cc_binary(
     deps = [
         "//hello-world/cpp:popen",
         "//hello-world/cpp:greet",
-#       "//mediapipe/calculators/core:constant_side_packet_calculator",
-#       "//mediapipe/calculators/core:flow_limiter_calculator",
-#       "//mediapipe/graphs/hand_tracking/subgraphs:hand_renderer_gpu",
+        "//mediapipe/calculators/core:constant_side_packet_calculator",
+        "//mediapipe/calculators/core:flow_limiter_calculator",
         "//mediapipe/calculators/core:gate_calculator_cc_proto",
         "//mediapipe/framework:counter",
         "//mediapipe/framework:port",
@@ -106,16 +105,64 @@ cc_binary(
         "//mediapipe/calculators/util:landmark_projection_calculator",
         "//mediapipe/calculators/tensor:tensors_to_landmarks_calculator",
         "//mediapipe/calculators/tensor:tensors_to_floats_calculator",
-#        "//mediapipe/calculators/tensor:inference_calculator",
+        "//mediapipe/calculators/tensor:inference_calculator_interface",
+        "//mediapipe/calculators/tensor:inference_calculator_cpu",
+        "//mediapipe/framework/port:file_helpers",
+        "//mediapipe/framework/port:parse_text_proto",
+        "//mediapipe/gpu:gl_calculator_helper",
+        "//mediapipe/gpu:gpu_buffer",
+        "//mediapipe/gpu:gpu_shared_data_internal",
+        "@com_google_absl//absl/flags:flag",
+        "@com_google_absl//absl/flags:parse",
+        "//mediapipe/calculators/core:immediate_mux_calculator",
+        "//mediapipe/calculators/core:packet_inner_join_calculator",
+        "//mediapipe/calculators/core:previous_loopback_calculator",
+        "//mediapipe/calculators/core:merge_calculator",
+        "//mediapipe/calculators/core:end_loop_calculator",                     
+        "//mediapipe/calculators/core:begin_loop_calculator",          
+        "//mediapipe/calculators/util:collection_has_min_size_calculator",
+        "//mediapipe/calculators/util:detections_to_render_data_calculator",
+        "//mediapipe/calculators/util:labels_to_render_data_calculator",       
+        "//mediapipe/calculators/util:landmarks_to_render_data_calculator", 
+        "//mediapipe/calculators/util:rect_to_render_data_calculator",
+        "//mediapipe/calculators/util:annotation_overlay_calculator_cc_proto",
+        "//mediapipe/framework:calculator_options_cc_proto",
+        "//mediapipe/util:color_cc_proto",
+        "//mediapipe/framework/formats:video_stream_header",
+        "//mediapipe/framework/port:vector",
+        "//mediapipe/util:render_data_cc_proto",
+        "//mediapipe/gpu:gl_simple_shaders",
+        "//mediapipe/gpu:shader_util",
+        "//mediapipe/calculators/tensor:image_to_tensor_calculator_cc_proto",
+        "//mediapipe/calculators/tflite:tflite_inference_calculator",
+        "//mediapipe/calculators/tensor:inference_calculator",                  # from hand_landmark_cpu dep # empty select applied
+#        "//mediapipe/calculators/tensor:tensors_to_classification_calculator",
+#        "//mediapipe/calculators/tensor:image_to_tensor_calculator",           # from hand_landmark_cpu dep # cv err due to dep "image_to_tensor_converter_opencv"
+#        "//mediapipe/modules/hand_landmark:hand_landmark_cpu",
+#        "//mediapipe/util:annotation_renderer", # cv
+#        "//mediapipe/calculators/util:annotation_overlay_calculator",
+#        "//mediapipe/graphs/hand_tracking/subgraphs:hand_renderer_cpu",
+#        "//mediapipe/modules/hand_landmark:hand_landmark_tracking_cpu",
+#        "//mediapipe/graphs/hand_tracking:desktop_offline_calculators",
+#        "//mediapipe/graphs/hand_tracking:desktop_tflite_calculators",
+#        "//mediapipe/calculators/tensor:inference_calculator",                  # opengl err
+#        "//mediapipe/framework/formats:image_frame_opencv",                    # opencv errs
 ##        "//mediapipe/framework/port:opencv_core",                             # opencv errs
 #        "//mediapipe/framework/formats:image_opencv",                          # opencv errs
 #        "//mediapipe/framework/port:opencv_imgproc",                           # opencv errs
 #        "//mediapipe/calculators/tensor:image_to_tensor_converter_opencv",     # opencv errs
+#        "//mediapipe/framework/formats:image_frame_opencv",                    # opencv errs
+#        "//mediapipe/framework/port:opencv_highgui",                           # opencv errs
+#        "//mediapipe/framework/port:opencv_video",                             # opencv errs
+#        "//mediapipe/calculators/video:opencv_video_decoder_calculator",       # opencv errs
+#        "//mediapipe/calculators/video:opencv_video_encoder_calculator",       # opencv errs
 #        "//mediapipe/calculators/tensor:tensors_to_classification_calculator",
 #        "//mediapipe/calculators/util:landmark_letterbox_removal_calculator",
 #        "//mediapipe/calculators/tensor:image_to_tensor_calculator",
 #        "//mediapipe/modules/hand_landmark:hand_landmark_gpu",
 #       "//mediapipe/modules/hand_landmark:hand_landmark_tracking_gpu",
+#        "//mediapipe/graphs/hand_tracking/subgraphs:hand_renderer_gpu",
+#        "//mediapipe/modules/hand_landmark:hand_landmark_tracking_gpu",
 #    visibility = ["//visibility:public"],
     ],
 )
