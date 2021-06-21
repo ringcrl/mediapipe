@@ -799,10 +799,14 @@ cc_library(
     deps = [
         "//mediapipe/framework:calculator_framework",
         "//mediapipe/framework/formats:landmark_cc_proto",
-        "//mediapipe/framework/formats:location",
         "//mediapipe/framework/port:ret_check",
         "//mediapipe/framework/port:status",
-    ],
+    ] + select({
+        "//conditions:default": [
+            "//mediapipe/framework/formats:location",
+        ],
+        "//mediapipe:emscripten_wasm": []
+    }),
     alwayslink = 1,
 )
 

@@ -18,7 +18,11 @@
 
 #include "mediapipe/calculators/tensor/image_to_tensor_calculator.pb.h"
 #include "mediapipe/calculators/tensor/image_to_tensor_converter.h"
+
+#ifndef __EMSCRIPTEN__
 #include "mediapipe/calculators/tensor/image_to_tensor_converter_opencv.h"
+#endif
+
 #include "mediapipe/calculators/tensor/image_to_tensor_utils.h"
 #include "mediapipe/framework/api2/node.h"
 #include "mediapipe/framework/calculator_framework.h"

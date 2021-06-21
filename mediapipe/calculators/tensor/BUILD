@@ -152,6 +152,7 @@ cc_library(
     name = "inference_calculator_gl_if_compute_shader_available",
     deps = select({
         ":compute_shader_unavailable": [],
+        "//mediapipe:emscripten_wasm": [],
         "//conditions:default": [":inference_calculator_gl"],
     }),
 )
@@ -165,7 +166,6 @@ cc_library(
     ] + select({
         "//conditions:default": [":inference_calculator_gl_if_compute_shader_available"],
         "//mediapipe:ios": [":inference_calculator_metal"],
-        "//mediapipe:emscripten_wasm": [],
     }),
     alwayslink = 1,
 )
@@ -420,12 +420,14 @@ cc_library(
         "//mediapipe/framework/api2:node",
         "//mediapipe/framework/formats:classification_cc_proto",
         "//mediapipe/framework:calculator_framework",
-        "//mediapipe/framework/formats:location",
         "//mediapipe/framework/port:ret_check",
         "//mediapipe/framework/formats:tensor",
         "//mediapipe/util:resource_util",
     ] + select({
         "//mediapipe:android": [
+            "//mediapipe/util/android/file/base",
+        ],
+        "//mediapipe:emscripten_wasm": [
             "//mediapipe/util/android/file/base",
         ],
         "//mediapipe:ios": [
@@ -434,6 +436,11 @@ cc_library(
         "//conditions:default": [
             "//mediapipe/framework/port:file_helpers",
         ],
+    }) + select({
+        "//conditions:default": [
+            "//mediapipe/framework/formats:location", # uses cv
+        ],
+        "//mediapipe:emscripten_wasm": []
     }),
     alwayslink = 1,
 )
@@ -482,7 +489,6 @@ cc_library(
     deps = [
         ":image_to_tensor_calculator_cc_proto",
         ":image_to_tensor_converter",
-        ":image_to_tensor_converter_opencv",
         ":image_to_tensor_utils",
         "//mediapipe/framework/api2:node",
         "//mediapipe/framework/formats:image",
@@ -497,7 +503,16 @@ cc_library(
         "//mediapipe/gpu:gpu_origin_cc_proto",
     ] + select({
         "//mediapipe/gpu:disable_gpu": [],
+        "//mediapipe:emscripten_wasm": [
+            ":image_to_tensor_calculator_gpu_deps",
+            ":image_to_tensor_converter_gl_texture"
+        ],
         "//conditions:default": [":image_to_tensor_calculator_gpu_deps"],
+    }) + select({
+        "//mediapipe:emscripten_wasm": [],
+        "//conditions:default":[
+            ":image_to_tensor_converter_opencv",
+        ],
     }),
     alwayslink = 1,
 )
@@ -686,6 +701,7 @@ cc_library(
             "//mediapipe/gpu:shader_util",
         ],
     }),
+    visibility = ["//visibility:public"],
 )
 
 cc_library(
