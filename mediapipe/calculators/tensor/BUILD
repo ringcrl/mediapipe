@@ -526,7 +526,7 @@ cc_library(
             "//mediapipe/gpu:gpu_buffer",
         ],
         "//mediapipe:emscripten_wasm": [
-            ":image_to_tensor_converter_gl_buffer",
+            # ":image_to_tensor_converter_gl_buffer",
             "//mediapipe/gpu:gl_calculator_helper",
             "//mediapipe/gpu:gpu_buffer",
         ],

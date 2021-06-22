@@ -21,7 +21,7 @@
 
 #ifndef __EMSCRIPTEN__
 #include "mediapipe/calculators/tensor/image_to_tensor_converter_opencv.h"
-#endif
+#endif // __EMSCRIPTEN__
 
 #include "mediapipe/calculators/tensor/image_to_tensor_utils.h"
 #include "mediapipe/framework/api2/node.h"
@@ -43,7 +43,7 @@
 #if MEDIAPIPE_METAL_ENABLED
 #include "mediapipe/calculators/tensor/image_to_tensor_converter_metal.h"
 #include "mediapipe/gpu/MPPMetalHelper.h"
-#elif MEDIAPIPE_OPENGL_ES_VERSION >= MEDIAPIPE_OPENGL_ES_31
+#elif !defined(__EMSCRIPTEN__) && (MEDIAPIPE_OPENGL_ES_VERSION >= MEDIAPIPE_OPENGL_ES_31)
 #include "mediapipe/calculators/tensor/image_to_tensor_converter_gl_buffer.h"
 #include "mediapipe/gpu/gl_calculator_helper.h"
 #else
@@ -305,8 +305,12 @@ class ImageToTensorCalculator : public Node {
       }
     } else {
       if (!cpu_converter_) {
+        #ifdef __EMSCRIPTEN__
+        LOG(ERROR) << "Cannot use OpenCV converter on web yet!";
+        #else
         ASSIGN_OR_RETURN(cpu_converter_,
-                         CreateOpenCvConverter(cc, GetBorderMode()));
+                        CreateOpenCvConverter(cc, GetBorderMode()));
+        #endif // __EMSCRIPTEN__
       }
     }
     return absl::OkStatus();

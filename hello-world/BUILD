@@ -166,7 +166,8 @@ cc_binary(
         "//mediapipe/framework/port:rectangle",
         "//mediapipe/framework/formats/annotation:rasterization_cc_proto",
         "//mediapipe/framework/formats:location",  # used by "calculator/tensor:tensors_to_classification_calculator", "//mediapipe/calculators/util:landmark_letterbox_removal_calculator", cv err, location.h uses cv::Rect, cv::Mat,
-        # "//mediapipe/calculators/tensor:image_to_tensor_calculator",  # from hand_landmark_cpu dep # cv err due to dep "image_to_tensor_converter_opencv"
+        "//mediapipe/gpu:gl_context",
+        "//mediapipe/calculators/tensor:image_to_tensor_calculator",  # from hand_landmark_cpu dep # cv err due to dep "image_to_tensor_converter_opencv"
         # "//mediapipe/modules/hand_landmark:hand_landmark_cpu",
         # "//mediapipe/util:annotation_renderer",  # uses cv:: many times, required by "//mediapipe/calculators/util:annotation_overlay_calculator"
         # "//mediapipe/calculators/util:annotation_overlay_calculator", #uses cv

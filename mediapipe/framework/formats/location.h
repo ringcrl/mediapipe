@@ -32,10 +32,12 @@
 
 // clang-format off
 #if !defined(LOCATION_OPENCV)
-#if !defined(__EMSCRIPTEN__)
-#  define LOCATION_OPENCV 1
-#endif
-#endif
+#if defined(__EMSCRIPTEN__)
+#define LOCATION_OPENCV 0
+#else
+#define LOCATION_OPENCV 1
+#endif // __EMSCRIPTEN__
+#endif // LOCATION_OPENCV
 
 #if LOCATION_OPENCV
 #include "mediapipe/framework/port/opencv_core_inc.h"
