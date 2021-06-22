@@ -32,7 +32,9 @@
 
 // clang-format off
 #if !defined(LOCATION_OPENCV)
+#if !defined(__EMSCRIPTEN__)
 #  define LOCATION_OPENCV 1
+#endif
 #endif
 
 #if LOCATION_OPENCV
