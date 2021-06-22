@@ -292,7 +292,7 @@ class ImageToTensorCalculator : public Node {
 #if MEDIAPIPE_METAL_ENABLED
         ASSIGN_OR_RETURN(gpu_converter_,
                          CreateMetalConverter(cc, GetBorderMode()));
-#elif MEDIAPIPE_OPENGL_ES_VERSION >= MEDIAPIPE_OPENGL_ES_31
+#elif !defined(__EMSCRIPTEN__) && MEDIAPIPE_OPENGL_ES_VERSION >= MEDIAPIPE_OPENGL_ES_31
         ASSIGN_OR_RETURN(gpu_converter_,
                          CreateImageToGlBufferTensorConverter(
                              cc, DoesGpuInputStartAtBottom(), GetBorderMode()));
