@@ -43,7 +43,7 @@
 #if MEDIAPIPE_METAL_ENABLED
 #include "mediapipe/calculators/tensor/image_to_tensor_converter_metal.h"
 #include "mediapipe/gpu/MPPMetalHelper.h"
-#elif !defined(__EMSCRIPTEN__) && (MEDIAPIPE_OPENGL_ES_VERSION >= MEDIAPIPE_OPENGL_ES_31)
+#elif (MEDIAPIPE_OPENGL_ES_VERSION >= MEDIAPIPE_OPENGL_ES_31)
 #include "mediapipe/calculators/tensor/image_to_tensor_converter_gl_buffer.h"
 #include "mediapipe/gpu/gl_calculator_helper.h"
 #else
@@ -292,7 +292,7 @@ class ImageToTensorCalculator : public Node {
 #if MEDIAPIPE_METAL_ENABLED
         ASSIGN_OR_RETURN(gpu_converter_,
                          CreateMetalConverter(cc, GetBorderMode()));
-#elif !defined(__EMSCRIPTEN__) && MEDIAPIPE_OPENGL_ES_VERSION >= MEDIAPIPE_OPENGL_ES_31
+#elif MEDIAPIPE_OPENGL_ES_VERSION >= MEDIAPIPE_OPENGL_ES_31
         ASSIGN_OR_RETURN(gpu_converter_,
                          CreateImageToGlBufferTensorConverter(
                              cc, DoesGpuInputStartAtBottom(), GetBorderMode()));

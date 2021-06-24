@@ -34,6 +34,7 @@ cc_binary(
         "-s USE_PTHREADS=0",
         "-s ALLOW_MEMORY_GROWTH=0",
         "-s ERROR_ON_UNDEFINED_SYMBOLS=1",
+        "-s USE_WEBGL2=1",
         "--export-all",
         "--no-entry",
         "-s ASSERTIONS=0",
@@ -168,11 +169,28 @@ cc_binary(
         "//mediapipe/framework/formats:location",  # used by "calculator/tensor:tensors_to_classification_calculator", "//mediapipe/calculators/util:landmark_letterbox_removal_calculator", cv err, location.h uses cv::Rect, cv::Mat,
         "//mediapipe/gpu:gl_context",
         "//mediapipe/calculators/tensor:image_to_tensor_calculator",  # from hand_landmark_cpu dep # cv err due to dep "image_to_tensor_converter_opencv"
-        # "//mediapipe/modules/hand_landmark:hand_landmark_cpu",
+        "//mediapipe/modules/hand_landmark:hand_landmark_cpu",
         # "//mediapipe/util:annotation_renderer",  # uses cv:: many times, required by "//mediapipe/calculators/util:annotation_overlay_calculator"
         # "//mediapipe/calculators/util:annotation_overlay_calculator", #uses cv
         "//mediapipe/graphs/hand_tracking/subgraphs:hand_renderer_cpu", # used select to exclude "//mediapipe/calculators/util:annotation_overlay_calculator" 
-        # "//mediapipe/modules/hand_landmark:hand_landmark_tracking_cpu",
+        "//mediapipe/modules/hand_landmark:hand_landmark_tracking_cpu",
+        "@com_google_googletest//:gtest",
+        "//mediapipe/graphs/hand_tracking/subgraphs:hand_renderer_gpu", # 1 dep uses cv ("//mediapipe/calculators/util:annotation_overlay_calculator"), excluded using select
+        "//mediapipe/modules/hand_landmark:hand_landmark_tracking_gpu",
+        "//mediapipe/calculators/image:image_properties_calculator",
+        "//mediapipe/calculators/util:association_norm_rect_calculator",
+        "//mediapipe/calculators/util:filter_collection_calculator",
+        "//mediapipe/modules/palm_detection:palm_detection_gpu",
+        "//mediapipe/graphs/hand_tracking:mobile_calculators",
+        # "//mediapipe/framework/formats:image_frame_opencv",
+        # "//mediapipe/examples/desktop:demo_run_graph_main_gpu",
+        # "//mediapipe/framework/port:status_matchers",
+        # "//mediapipe/framework/deps:status_matchers",
+        # "//mediapipe/framework/port:gtest_main",
+        # "//third_party:opencv",
+        # "//mediapipe/framework/port:opencv_core",
+        # "//mediapipe/framework/formats:image_frame_opencv",
+        # "//mediapipe/calculators/video:opencv_video_decoder_calculator",
         # "//mediapipe/graphs/hand_tracking:desktop_offline_calculators",
         # "//mediapipe/graphs/hand_tracking:desktop_tflite_calculators",
         # "//mediapipe/framework/formats:image_frame_opencv",  # opencv errs
