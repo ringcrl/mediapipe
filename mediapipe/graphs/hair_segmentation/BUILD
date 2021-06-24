@@ -23,6 +23,7 @@ package(default_visibility = ["//visibility:public"])
 
 cc_library(
     name = "mobile_calculators",
+    visibility = ["//visibility:public"],
     deps = [
         "//mediapipe/calculators/core:flow_limiter_calculator",
         "//mediapipe/calculators/core:previous_loopback_calculator",

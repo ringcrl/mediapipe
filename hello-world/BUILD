@@ -43,6 +43,46 @@ cc_binary(
     visibility = ["//visibility:public"],
     #    linkopts = DEFAULT_EMSCRIPTEN_LINKOPTS + WASM_LINKOPTS,
     deps = [
+        # "//mediapipe/graphs/iris_tracking/subgraphs:renderer_calculators",
+        "//mediapipe/graphs/iris_tracking/calculators:iris_to_depth_calculator",
+        # "//mediapipe/graphs/iris_tracking/subgraphs:iris_and_depth_renderer_gpu",
+        "//mediapipe/graphs/iris_tracking/calculators:update_face_landmarks_calculator",
+        # "//mediapipe/graphs/iris_tracking:iris_tracking_gpu_deps",
+        # -------------- mp/examples/desktop/iris_tracking:iris_tracking_gpu end ---------------
+        "//mediapipe/graphs/face_mesh:desktop_live_calculators",
+        "//mediapipe/graphs/face_mesh/subgraphs:renderer_calculators",
+        "//mediapipe/graphs/face_mesh/subgraphs:face_renderer_gpu",
+        "//mediapipe/graphs/face_mesh:desktop_live_gpu_calculators",
+        # -------------- mp/examples/desktop/face_mesh:face_mesh_gpu end ---------------
+        "//mediapipe/graphs/face_detection:desktop_live_gpu_calculators",
+        "//mediapipe/graphs/face_detection:desktop_live_calculators",
+        # -------------- mp/examples/desktop/face_detection:face_detection_gpu end ---------------
+        # "//mediapipe/framework:calculator_framework", # included before
+        # "//mediapipe/framework/port:file_helpers", # ,,
+        # "//mediapipe/framework/port:map_util", # ,,
+        # "//mediapipe/framework/port:parse_text_proto", # ,,
+        # "//mediapipe/framework/port:ret_check", # ,,
+        # "//mediapipe/framework/port:status", # ,,
+        # "//mediapipe/framework/port:statusor", # ,,
+        # "@com_google_absl//absl/flags:flag", # ,,
+        # "@com_google_absl//absl/flags:parse", # ,,
+        # "@com_google_absl//absl/strings", # ,,
+        # -------------- mp/examples/desktop:simple_run_graph_main end ---------------
+        "//mediapipe/calculators/core:pass_through_calculator",
+        # "//mediapipe/framework:calculator_graph", # included before
+        # "//mediapipe/framework/port:logging",
+        # "//mediapipe/framework/port:parse_text_proto",
+        # "//mediapipe/framework/port:status",
+        # -------------- desktop helloworld end --------------------
+        # "@maven//:com_google_guava_guava", # no matching toolchains found for types @bazel_tools//tools/android:sdk_toolchain_type
+        # "@maven//:androidx_concurrent_concurrent_futures", # ,,
+        # "//third_party:androidx_constraint_layout", # ,,
+        # "//third_party:androidx_appcompat", # ,,
+        # "//mediapipe/java/com/google/mediapipe/glutil", # ,,
+        # "//mediapipe/java/com/google/mediapipe/framework:android_framework", # ,,
+        # "//mediapipe/java/com/google/mediapipe/components:android_components", # ,,
+        # "//mediapipe/java/com/google/mediapipe/components:android_camerax_helper", # ,, 
+        # -------------- Android deps end --------------------
         "//hello-world/cpp:popen",
         "//hello-world/cpp:greet",
         "//mediapipe/calculators/core:constant_side_packet_calculator",
