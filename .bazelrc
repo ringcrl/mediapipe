@@ -100,3 +100,6 @@ try-import %workspace%/.user.bazelrc
 build:wasm --crosstool_top=@emsdk//emscripten_toolchain:everything
 build:wasm --cpu=wasm
 build:wasm --host_crosstool_top=@bazel_tools//tools/cpp:toolchain
+# Disable sandbox environment because emsdk caches files by writing to
+# home directory.
+build:wasm --spawn_strategy=local

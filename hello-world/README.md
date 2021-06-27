@@ -1,0 +1,7 @@
+[Do we need non-standalone Wasm?](https://v8.dev/blog/emscripten-standalone-wasm#do-we-need-non-standalone-wasm%3F)
+
+Why does the STANDALONE_WASM flag exist? In theory Emscripten could always set STANDALONE_WASM, which would be simpler. But standalone Wasm files can't depend on JS, and that has some downsides:
+
+    We can't minify the Wasm import and export names, as the minification only works if both sides agree, the Wasm and what loads it.
+    Normally we create the Wasm Memory in JS so that JS can start to use it during startup, which lets us do work in parallel. But in standalone Wasm we have to create the Memory in the Wasm.
+    Some APIs are just easy to do in JS. For example __assert_fail, which is called when a C assertion fails, is normally implemented in JS. It takes just a single line, and even if you include the JS functions it calls, the total code size is quite small. On the other hand, in a standalone build we can't depend on JS, so we use musl's assert.c. That uses fprintf, which means it ends up pulling in a bunch of C stdio support, including things with indirect calls that make it hard to remove unused functions. Overall, there are many such details that end up making a difference in total code size.

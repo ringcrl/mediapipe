@@ -28,17 +28,41 @@ WASM_LINKOPTS = [
 # warning: Link with `-s LLD_REPORT_UNDEFINED` to get more information on undefined symbols
 
 cc_binary(
+    name = "hello-world-simple",
+    srcs = ["main2.cpp"],
+    linkopts = [
+        "-s USE_PTHREADS=0",
+        "-s ALLOW_MEMORY_GROWTH=1",
+        "-s ERROR_ON_UNDEFINED_SYMBOLS=1",
+        "-s USE_WEBGL2=1",
+        "--export-all",
+        # "--no-entry",
+        "-s ASSERTIONS=1",
+        "--bind",
+        "-s STANDALONE_WASM=0", # generates only wasm file, not .js file? generates independent wasm, but missing utilities of js
+    ],
+    visibility = ["//visibility:public"],
+    deps = [
+        "//hello-world/cpp:popen",
+        "//mediapipe/calculators/core:pass_through_calculator",
+    ],
+)
+
+
+cc_binary(
     name = "hello-world-wasm.js",
     srcs = ["main.cpp"],
     linkopts = [
         "-s USE_PTHREADS=0",
-        "-s ALLOW_MEMORY_GROWTH=0",
+        "-s ALLOW_MEMORY_GROWTH=1",
         "-s ERROR_ON_UNDEFINED_SYMBOLS=1",
         "-s USE_WEBGL2=1",
         "--export-all",
         "--no-entry",
         "-s ASSERTIONS=0",
         "--fatal-warnings",
+        "--bind",
+        "-s STANDALONE_WASM=1",
     ],
     visibility = ["//visibility:public"],
     #    linkopts = DEFAULT_EMSCRIPTEN_LINKOPTS + WASM_LINKOPTS,

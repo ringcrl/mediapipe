@@ -1,0 +1,16 @@
+<!doctype html>
+<html>
+  <script>
+    var Module = {
+      onRuntimeInitialized: function() {
+        console.log("initialized");
+      }
+    };
+
+    function hello() {
+      console.log(Module.helloName('alu'));
+    }
+  </script>
+  <input type="button" value="hello" onclick="hello()"/>
+  <script src="hello-world-simple.js"></script>
+</html>

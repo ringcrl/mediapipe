@@ -3,4 +3,4 @@ set -euo pipefail
 
 
 # Build the WASM variant
-bazel build -c opt //hello-world:hello-world-wasm.js --config=wasm --copt="-W#pragma-messages"
+bazel build //hello-world:hello-world-wasm.js --config=wasm
