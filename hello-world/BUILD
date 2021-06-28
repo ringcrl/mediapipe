@@ -45,24 +45,28 @@ cc_binary(
     deps = [
         "//hello-world/cpp:popen",
         "//mediapipe/calculators/core:pass_through_calculator",
+        "//mediapipe/framework:calculator_graph",
+        "//mediapipe/framework/port:logging",
+        "//mediapipe/framework/port:parse_text_proto",
+        "//mediapipe/framework/port:status",
     ],
 )
 
-
+# generates only wasm file, not .js file? generates independent wasm, but missing utilities of js
 cc_binary(
-    name = "hello-world-wasm.js",
+    name = "hello-world-wasm",
     srcs = ["main.cpp"],
     linkopts = [
         "-s USE_PTHREADS=0",
-        "-s ALLOW_MEMORY_GROWTH=1",
-        "-s ERROR_ON_UNDEFINED_SYMBOLS=1",
+        "-s ALLOW_MEMORY_GROWTH=0",
+        "-s ERROR_ON_UNDEFINED_SYMBOLS=1", 
         "-s USE_WEBGL2=1",
         "--export-all",
         "--no-entry",
-        "-s ASSERTIONS=0",
+        "-s ASSERTIONS=1",
         "--fatal-warnings",
         "--bind",
-        "-s STANDALONE_WASM=1",
+        # "-s STANDALONE_WASM=1",
     ],
     visibility = ["//visibility:public"],
     #    linkopts = DEFAULT_EMSCRIPTEN_LINKOPTS + WASM_LINKOPTS,
