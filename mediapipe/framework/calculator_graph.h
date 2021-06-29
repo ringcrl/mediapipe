@@ -54,12 +54,12 @@
 #include "mediapipe/framework/scheduler.h"
 #include "mediapipe/framework/thread_pool_executor.pb.h"
 
-#if !MEDIAPIPE_DISABLE_GPU
+#if !MEDIAPIPE_DISABLE_GPU && !defined(__EMSCRIPTEN__)
 namespace mediapipe {
 class GpuResources;
 struct GpuSharedData;
 }  // namespace mediapipe
-#endif  // !MEDIAPIPE_DISABLE_GPU
+#endif  // !MEDIAPIPE_DISABLE_GPU && !defined(__EMSCRIPTEN__)
 
 namespace mediapipe {
 
@@ -362,7 +362,7 @@ class CalculatorGraph {
     return scheduler_.GetSchedulerTimes();
   }
 
-#if !MEDIAPIPE_DISABLE_GPU
+#if !MEDIAPIPE_DISABLE_GPU && !defined(__EMSCRIPTEN__)
   // Returns a pointer to the GpuResources in use, if any.
   // Only meant for internal use.
   std::shared_ptr<::mediapipe::GpuResources> GetGpuResources() const;
@@ -375,7 +375,7 @@ class CalculatorGraph {
   // that have the same key.
   absl::StatusOr<std::map<std::string, Packet>> PrepareGpu(
       const std::map<std::string, Packet>& side_packets);
-#endif  // !MEDIAPIPE_DISABLE_GPU
+#endif  // !MEDIAPIPE_DISABLE_GPU && !defined(__EMSCRIPTEN__)
   template <typename T>
   absl::Status SetServiceObject(const GraphService<T>& service,
                                 std::shared_ptr<T> object) {
@@ -526,11 +526,11 @@ class CalculatorGraph {
   // status before taking any action.
   void UpdateThrottledNodes(InputStreamManager* stream, bool* stream_was_full);
 
-#if !MEDIAPIPE_DISABLE_GPU
+#if !MEDIAPIPE_DISABLE_GPU && !defined(__EMSCRIPTEN__)
   // Owns the legacy GpuSharedData if we need to create one for backwards
   // compatibility.
   std::unique_ptr<::mediapipe::GpuSharedData> legacy_gpu_shared_;
-#endif  // !MEDIAPIPE_DISABLE_GPU
+#endif  // !MEDIAPIPE_DISABLE_GPU && !defined(__EMSCRIPTEN__)
 
   // True if the graph was initialized.
   bool initialized_ = false;

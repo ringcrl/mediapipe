@@ -63,9 +63,9 @@
 #include "mediapipe/framework/validated_graph_config.h"
 #include "mediapipe/gpu/graph_support.h"
 #include "mediapipe/util/cpu_util.h"
-#if !MEDIAPIPE_DISABLE_GPU
+#if !MEDIAPIPE_DISABLE_GPU // && !defined(__EMSCRIPTEN__) ?
 #include "mediapipe/gpu/gpu_shared_data_internal.h"
-#endif  // !MEDIAPIPE_DISABLE_GPU
+#endif  // !MEDIAPIPE_DISABLE_GPU // && !defined(__EMSCRIPTEN__) ?
 
 namespace mediapipe {
 
@@ -509,7 +509,7 @@ absl::Status CalculatorGraph::StartRun(
   return absl::OkStatus();
 }
 
-#if !MEDIAPIPE_DISABLE_GPU
+#if !MEDIAPIPE_DISABLE_GPU && !defined(__EMSCRIPTEN__)
 absl::Status CalculatorGraph::SetGpuResources(
     std::shared_ptr<::mediapipe::GpuResources> resources) {
   auto gpu_service = service_manager_.GetServiceObject(kGpuService);
@@ -583,7 +583,7 @@ absl::StatusOr<std::map<std::string, Packet>> CalculatorGraph::PrepareGpu(
   }
   return additional_side_packets;
 }
-#endif  // !MEDIAPIPE_DISABLE_GPU
+#endif  // !MEDIAPIPE_DISABLE_GPU && !defined(__EMSCRIPTEN__)
 
 absl::Status CalculatorGraph::PrepareForRun(
     const std::map<std::string, Packet>& extra_side_packets,
@@ -602,9 +602,9 @@ absl::Status CalculatorGraph::PrepareForRun(
   num_closed_graph_input_streams_ = 0;
 
   std::map<std::string, Packet> additional_side_packets;
-#if !MEDIAPIPE_DISABLE_GPU
+#if !MEDIAPIPE_DISABLE_GPU && !defined(__EMSCRIPTEN__)
   ASSIGN_OR_RETURN(additional_side_packets, PrepareGpu(extra_side_packets));
-#endif  // !MEDIAPIPE_DISABLE_GPU
+#endif  // !MEDIAPIPE_DISABLE_GPU && !defined(__EMSCRIPTEN__)
 
   const std::map<std::string, Packet>* input_side_packets;
   if (!additional_side_packets.empty()) {
