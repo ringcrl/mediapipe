@@ -1,17 +1,66 @@
-<!doctype html>
-<html>
-  <script>
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Video Effects WebApp</title>
+  <script type="text/javascript">
     var Module = {
       onRuntimeInitialized: function() {
         console.log("initialized");
+
+      },
+      canvas: function() {
+        console.log("Module.canvas");
+        const canvasGL = document.querySelector("#glCanvas");
+        canvasGL.addEventListener(
+          "webglcontextlost", 
+          function(e) { 
+            alert('WebGL context lost. You will need to reload the page.'); 
+            e.preventDefault(); 
+          }, 
+          false
+        );
+
+        return canvasGL;
       }
     };
-
+    
     function hello() {
       console.log(Module.helloName('alu'));
     }
+
+    function main() {
+      const canvas = document.querySelector("#glCanvas");
+      // Initialize the GL context
+      const gl = canvas.getContext("webgl");
+
+      // Only continue if WebGL is available and working
+      if (gl === null) {
+        alert("Unable to initialize WebGL. Your browser or machine may not support it.");
+        return;
+      }
+
+      // Set clear color to black, fully opaque
+      gl.clearColor(0.0, 0.0, 0.0, 0.1); // rgb alpha
+      // Clear the color buffer with specified clear color
+      gl.clear(gl.COLOR_BUFFER_BIT);
+    }
+
+
+    window.onload = main;
+
   </script>
-  <input type="button" value="hello" onclick="hello()"/>
   <script src="hello-world-simple.js"></script>
   <!-- <script src="hello-world-wasm.js"></script> -->
+</head>
+<body>
+  <canvas id="glCanvas" width="640" height="480"></canvas>
+  <input type="button" value="hello" onclick="hello()"/>
+
+</body>
+
 </html>
+
