@@ -8,8 +8,6 @@
   <title>Video Effects WebApp</title>
   <script type="text/javascript">
 
-    
-
     var Module = {
       onRuntimeInitialized: function() {
         console.log("initialized");
@@ -48,10 +46,7 @@
       // Clear the color buffer with specified clear color
       gl.clear(gl.COLOR_BUFFER_BIT);
     }
-
-
     window.onload = main;
-
   </script>
   <script src="hello-world-simple.js"></script>
   <!-- <script src="hello-world-wasm.js"></script> -->
@@ -59,8 +54,6 @@
 <body>
   <canvas id="glCanvas" width="640" height="480"></canvas>
   <input type="button" value="hello" onclick="hello()"/>
-
 </body>
-
 </html>
 
