@@ -7,24 +7,12 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Video Effects WebApp</title>
   <script type="text/javascript">
+
+    
+
     var Module = {
       onRuntimeInitialized: function() {
         console.log("initialized");
-
-      },
-      canvas: function() {
-        console.log("Module.canvas");
-        const canvasGL = document.querySelector("#glCanvas");
-        canvasGL.addEventListener(
-          "webglcontextlost", 
-          function(e) { 
-            alert('WebGL context lost. You will need to reload the page.'); 
-            e.preventDefault(); 
-          }, 
-          false
-        );
-
-        return canvasGL;
       }
     };
     
@@ -33,6 +21,18 @@
     }
 
     function main() {
+      const canvasGL = document.querySelector("#glCanvas");
+      canvasGL.addEventListener(
+        "webglcontextlost", 
+        function(e) { 
+          alert('WebGL context lost. You will need to reload the page.'); 
+          e.preventDefault(); 
+        }, 
+        false
+      );
+
+      Module.canvas = canvasGL;
+
       const canvas = document.querySelector("#glCanvas");
       // Initialize the GL context
       const gl = canvas.getContext("webgl");

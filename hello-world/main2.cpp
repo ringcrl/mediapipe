@@ -17,6 +17,21 @@ std::string helloName(std::string name) {
   return "hello " + name;
 }
 
+/*
+
+      // node: {
+      //   calculator: "GlScalerCalculator"
+      //   input_stream: "VIDEO:out1"
+      //   output_stream: "VIDEO:out2"
+      // }
+
+            
+
+
+
+
+*/
+
 absl::Status PrintHelloWorld() {
   mediapipe::CalculatorGraphConfig config =
     mediapipe::ParseTextProtoOrDie<mediapipe::CalculatorGraphConfig>(R"pb(
@@ -27,18 +42,20 @@ absl::Status PrintHelloWorld() {
         input_stream: "in"
         output_stream: "out1"
       }
-
-      // node: {
-      //   calculator: "GlScalerCalculator"
-      //   input_stream: "VIDEO:out1"
-      //   output_stream: "VIDEO:out2"
-      // }
+      
+      node: {
+        calculator: "ImageFrameToGpuBufferCalculator"
+        input_stream: "out1"
+        output_stream: "output_video"
+      }
 
       node {
         calculator: "PassThroughCalculator"
-        input_stream: "out1"
+        input_stream: "output_video"
         output_stream: "out"
       }
+
+
     )pb");
 
   // int num_extensions = 0;
