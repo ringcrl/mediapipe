@@ -3,6 +3,12 @@
 #include "mediapipe/framework/port/status.h"
 #include "mediapipe/framework/port/parse_text_proto.h"
 #include "mediapipe/framework/calculator_graph.h"
+#include "mediapipe/gpu/gl_context_internal.h"
+
+
+#include "mediapipe/gpu/gl_calculator_helper.h"
+#include "mediapipe/gpu/gpu_buffer.h"
+#include "mediapipe/gpu/gpu_shared_data_internal.h"
 
 using namespace emscripten;
 
@@ -21,6 +27,13 @@ absl::Status PrintHelloWorld() {
         input_stream: "in"
         output_stream: "out1"
       }
+
+      // node: {
+      //   calculator: "GlScalerCalculator"
+      //   input_stream: "VIDEO:out1"
+      //   output_stream: "VIDEO:out2"
+      // }
+
       node {
         calculator: "PassThroughCalculator"
         input_stream: "out1"
@@ -28,10 +41,27 @@ absl::Status PrintHelloWorld() {
       }
     )pb");
 
+  // int num_extensions = 0;
+  // glGetIntegerv(GL_NUM_EXTENSIONS, &num_extensions);
+  // LOG(INFO) << "gl_num_extensions:" << num_extensions;
+  // ERROR: Uncaught TypeError: GL.currentContext is undefined
+  
+  // int majorVersion;
+  // glGetIntegerv(GL_MAJOR_VERSION, &majorVersion);
+  // ERROR: Uncaught TypeError: GL.currentContext is undefined
+
+  // LOG(INFO) << "GL_VERSION:" << glGetString(GL_VERSION);
+  // ERROR: Uncaught TypeError: GLctx is undefined
+
+  // LOG(INFO) << glGetString(GL_VENDOR); 
+  // ERROR: Uncaught TypeError: GLctx is undefined
+
+
   mediapipe::CalculatorGraph graph;
   MP_RETURN_IF_ERROR(graph.Initialize(config));
   // ASSIGN_OR_RETURN(mediapipe::OutputStreamPoller poller,
   //                  graph.AddOutputStreamPoller("out"));
+  ASSIGN_OR_RETURN(auto gpu_resources, mediapipe::GpuResources::Create());
 
   std::vector<mediapipe::Packet> output_packets;
   
