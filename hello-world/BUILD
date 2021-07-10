@@ -53,6 +53,8 @@ cc_binary(
         "//mediapipe/gpu:gpu_shared_data_internal",
         "//mediapipe/gpu:gl_calculator_helper",
         "//mediapipe/gpu:image_frame_to_gpu_buffer_calculator",
+        "//mediapipe/framework:calculator_framework",
+        "//mediapipe/framework/formats:image_frame",
     ],
 )
 

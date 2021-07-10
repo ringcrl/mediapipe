@@ -54,7 +54,7 @@
 #include "mediapipe/framework/scheduler.h"
 #include "mediapipe/framework/thread_pool_executor.pb.h"
 
-#if !MEDIAPIPE_DISABLE_GPU && !defined(__EMSCRIPTEN__)
+#if !MEDIAPIPE_DISABLE_GPU
 namespace mediapipe {
 class GpuResources;
 struct GpuSharedData;
@@ -362,7 +362,7 @@ class CalculatorGraph {
     return scheduler_.GetSchedulerTimes();
   }
 
-#if !MEDIAPIPE_DISABLE_GPU && !defined(__EMSCRIPTEN__)
+#if !MEDIAPIPE_DISABLE_GPU
   // Returns a pointer to the GpuResources in use, if any.
   // Only meant for internal use.
   std::shared_ptr<::mediapipe::GpuResources> GetGpuResources() const;
@@ -526,7 +526,7 @@ class CalculatorGraph {
   // status before taking any action.
   void UpdateThrottledNodes(InputStreamManager* stream, bool* stream_was_full);
 
-#if !MEDIAPIPE_DISABLE_GPU && !defined(__EMSCRIPTEN__)
+#if !MEDIAPIPE_DISABLE_GPU
   // Owns the legacy GpuSharedData if we need to create one for backwards
   // compatibility.
   std::unique_ptr<::mediapipe::GpuSharedData> legacy_gpu_shared_;

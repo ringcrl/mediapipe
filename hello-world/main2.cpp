@@ -10,6 +10,12 @@
 #include "mediapipe/gpu/gpu_buffer.h"
 #include "mediapipe/gpu/gpu_shared_data_internal.h"
 
+#include "mediapipe/framework/formats/image_frame.h"
+
+#include "mediapipe/framework/calculator_framework.h"
+#include "mediapipe/framework/calculator_graph.h"
+
+
 using namespace emscripten;
 
 // namespace mediapipe {
@@ -76,9 +82,12 @@ absl::Status PrintHelloWorld() {
 
   mediapipe::CalculatorGraph graph;
   MP_RETURN_IF_ERROR(graph.Initialize(config));
-  // ASSIGN_OR_RETURN(mediapipe::OutputStreamPoller poller,
-  //                  graph.AddOutputStreamPoller("out"));
+  ASSIGN_OR_RETURN(mediapipe::OutputStreamPoller poller,
+                   graph.AddOutputStreamPoller("out"));
   ASSIGN_OR_RETURN(auto gpu_resources, mediapipe::GpuResources::Create());
+  MP_RETURN_IF_ERROR(graph.SetGpuResources(gpu_resources));
+  // mediapipe::GlCalculatorHelper gpu_helper;
+  // gpu_helper.InitializeForTest(graph.GetGpuResources().get());
 
   std::vector<mediapipe::Packet> output_packets;
   

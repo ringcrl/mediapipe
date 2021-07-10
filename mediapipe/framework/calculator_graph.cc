@@ -509,7 +509,7 @@ absl::Status CalculatorGraph::StartRun(
   return absl::OkStatus();
 }
 
-#if !MEDIAPIPE_DISABLE_GPU && !defined(__EMSCRIPTEN__)
+#if !MEDIAPIPE_DISABLE_GPU
 absl::Status CalculatorGraph::SetGpuResources(
     std::shared_ptr<::mediapipe::GpuResources> resources) {
   auto gpu_service = service_manager_.GetServiceObject(kGpuService);
@@ -602,7 +602,7 @@ absl::Status CalculatorGraph::PrepareForRun(
   num_closed_graph_input_streams_ = 0;
 
   std::map<std::string, Packet> additional_side_packets;
-#if !MEDIAPIPE_DISABLE_GPU && !defined(__EMSCRIPTEN__)
+#if !MEDIAPIPE_DISABLE_GPU
   ASSIGN_OR_RETURN(additional_side_packets, PrepareGpu(extra_side_packets));
 #endif  // !MEDIAPIPE_DISABLE_GPU && !defined(__EMSCRIPTEN__)
 
