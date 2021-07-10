@@ -110,6 +110,8 @@ cc_library(
         "//mediapipe/gpu:MPPMetalUtil",
         "//mediapipe/gpu:gpu_buffer",
         "//mediapipe/objc:mediapipe_framework_ios",
+        "//mediapipe/util/tflite:config",
+        "@com_google_absl//absl/memory",
         "@org_tensorflow//tensorflow/lite/delegates/gpu:metal_delegate",
         "@org_tensorflow//tensorflow/lite/delegates/gpu:metal_delegate_internal",
         "@org_tensorflow//tensorflow/lite/delegates/gpu/common:shape",
@@ -510,9 +512,8 @@ cc_library(
         "//conditions:default": [":image_to_tensor_calculator_gpu_deps"],
     }) + select({
         "//mediapipe:emscripten_wasm": [],
-        "//conditions:default":[
-            ":image_to_tensor_converter_opencv",
-        ],
+        "//mediapipe/framework/port:disable_opencv": [],
+        "//conditions:default": [":image_to_tensor_converter_opencv"],
     }),
     alwayslink = 1,
 )

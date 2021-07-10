@@ -16,5 +16,5 @@ run-server-simple:
 	cp -r bazel-out/wasm-opt/bin/hello-world/hello-world-simple.js hello-server/
 	cp -r bazel-out/wasm-opt/bin/hello-world/hello-world-simple.wasm hello-server/
 	cp hello-world/*.html hello-server/
-	python2 -m SimpleHTTPServer 8080
+	python2 -m SimpleHTTPServer 8000
 	
