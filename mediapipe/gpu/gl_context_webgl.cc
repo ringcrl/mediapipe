@@ -75,6 +75,20 @@ absl::Status GlContext::CreateContextInternal(
   // TODO: Ensure this works with all options (in particular,
   //   multithreading options, like the special-case combination of USE_PTHREADS
   //   and OFFSCREEN_FRAMEBUFFER)
+  // clang-format off
+  EM_ASM(
+    let init_once = true;
+    if (init_once) {
+      const cachedFindCanvasEventTarget = findCanvasEventTarget;
+
+      if (typeof cachedFindCanvasEventTarget !== 'function') {
+        if (typeof console !== 'undefined') {
+          console.error('Expected Emscripten global function '
+              + '"findCanvasEventTarget" not found. WebGL context creation '
+              + 'may fail.');
+        }
+        return;
+      }
 
       findCanvasEventTarget = function(target) {
         if (target == 0) {

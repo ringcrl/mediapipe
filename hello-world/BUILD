@@ -55,6 +55,8 @@ cc_binary(
         "//mediapipe/gpu:image_frame_to_gpu_buffer_calculator",
         "//mediapipe/framework:calculator_framework",
         "//mediapipe/framework/formats:image_frame",
+        "//mediapipe/gpu:gl_simple_calculator",
+        "//mediapipe/gpu:gl_simple_shaders",
     ],
 )
 
