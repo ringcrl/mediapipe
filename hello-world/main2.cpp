@@ -36,11 +36,6 @@ std::string helloName(std::string name) {
       //   output_stream: "VIDEO:out2"
       // }
 
-            
-
-
-
-
 */
 
 absl::Status PrintHelloWorld() {
@@ -203,13 +198,22 @@ absl::Status WebGLCalculator::GlSetup() {
       // float luminance = dot(color.rgb, W);
       // fragColor.rgb = vec3(luminance);
       fragColor.rgb = vec3(0.0, 0.0, 1.0);
-      fragColor.a = color.a;
+      fragColor.a = 1.0;
     }
 
   )";
 
-  GlhCreateProgram(kBasicVertexShader, frag_src, NUM_ATTRIBUTES,
+  // Creates a GLSL program by compiling and linking the provided shaders.
+  // Also obtains the locations of the requested attributes.
+  auto glStatus = GlhCreateProgram(kBasicVertexShader, frag_src, NUM_ATTRIBUTES,
                    (const GLchar**)&attr_name[0], attr_location, &program_);
+  
+  if (glStatus != GL_TRUE) {
+    LOG(ERROR) << "GlhCreateProgram failed";
+  } else {
+    LOG(INFO) << "GlhCreateProgram success";
+  }
+  
   RET_CHECK(program_) << "Problem initializing the program.";
   frame_ = glGetUniformLocation(program_, "video_frame");
   
@@ -229,6 +233,9 @@ absl::Status WebGLCalculator::GlRender(const GlTexture& src, const GlTexture& ds
       0.0f, 1.0f,  // top left
       1.0f, 1.0f,  // top right
   };
+
+  LOG(INFO) << "GLRender()";
+  glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
   // program
   glUseProgram(program_);
@@ -257,6 +264,7 @@ absl::Status WebGLCalculator::GlRender(const GlTexture& src, const GlTexture& ds
 
   // draw
   glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+  // glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
   // cleanup
   glDisableVertexAttribArray(ATTRIB_VERTEX);
@@ -349,7 +357,7 @@ absl::Status webglCanvasDraw() {
   for (int i = 0; i < 5; ++i) {
     MP_RETURN_IF_ERROR(graph.AddPacketToInputStream(
       "input_video",
-      mediapipe::Adopt(new mediapipe::ImageFrame(mediapipe::ImageFormat::SRGBA, 1, 2)).At(mediapipe::Timestamp(i))));
+      mediapipe::Adopt(new mediapipe::ImageFrame(mediapipe::ImageFormat::SRGBA, 400, 400)).At(mediapipe::Timestamp(i))));
   }
 
 
