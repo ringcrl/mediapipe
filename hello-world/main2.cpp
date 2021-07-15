@@ -117,10 +117,6 @@ absl::Status PrintHelloWorld() {
   // while (poller.Next(&packet)) {
   // }
 
-/*
-If we want to be able to repeat it and potentially run multiple frames, then we can just get rid of the "CloseInputStream" call entirely, and can use "graph.WaitUntilIdle()" instead of "graph.WaitUntilDone"
-it's fine to just leave input streams open forever, and leave the graph kinda "perpetually running"...  when we're all done with it, we can then just call graph.Close() and it should close and clean up everything at once, so it's a lot simpler/easier that way
-*/
 
   MP_RETURN_IF_ERROR(graph.CloseAllPacketSources());
 
@@ -435,8 +431,6 @@ absl::Status webglCanvasDraw() {
 
 
   // MP_RETURN_IF_ERROR(graph.WaitUntilDone());
-  // MP_RETURN_IF_ERROR(graph.WaitUntilIdle());
-
 
   for (const mediapipe::Packet & p: output_packets) {
     LOG(INFO) << p.Get<std::string>();
