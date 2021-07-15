@@ -18,6 +18,10 @@
       console.log(Module.helloName('alu'));
     }
 
+    function runGraph() {
+      Module.runMPGraph();
+    }
+
     function main() {
       const canvasGL = document.querySelector("#glCanvas");
       canvasGL.addEventListener(
@@ -55,7 +59,9 @@
   <canvas id="glCanvas" width="640" height="480"></canvas>
   <!-- <canvas id="glCanvas"></canvas> -->
 
-  <input type="button" value="hello" onclick="hello()"/>
+  <!-- <input type="button" value="hello" onclick="hello()"/> -->
+  <input type="button" value="Run Graph" onclick="runGraph()"/>
+
 </body>
 </html>
 

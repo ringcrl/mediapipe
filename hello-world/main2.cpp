@@ -237,7 +237,6 @@ absl::Status RenderGPUBufferToCanvasCalculator::GlRender(const GlTexture& src, c
       1.0f, 1.0f,  // top right
   };
 
-  LOG(INFO) << "GLRender()";
   glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
   // program
@@ -267,7 +266,8 @@ absl::Status RenderGPUBufferToCanvasCalculator::GlRender(const GlTexture& src, c
 
   // draw
   glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
-  // glBindFramebuffer(GL_FRAMEBUFFER, 0);
+  // glBindFramebuffer(GL_FRAMEBUFFER, 0); // glBindFramebuffer after draw does not work
+
 
   // cleanup
   glDisableVertexAttribArray(ATTRIB_VERTEX);
@@ -339,8 +339,8 @@ absl::Status webglCanvasDraw() {
                    graph.AddOutputStreamPoller("output_video"));
   ASSIGN_OR_RETURN(auto gpu_resources, mediapipe::GpuResources::Create());
   MP_RETURN_IF_ERROR(graph.SetGpuResources(gpu_resources));
-  // mediapipe::GlCalculatorHelper gpu_helper;
-  // gpu_helper.InitializeForTest(graph.GetGpuResources().get());
+  mediapipe::GlCalculatorHelper gpu_helper;
+  gpu_helper.InitializeForTest(graph.GetGpuResources().get());
 
   std::vector<mediapipe::Packet> output_packets;
   
@@ -352,15 +352,31 @@ absl::Status webglCanvasDraw() {
   });
 
   MP_RETURN_IF_ERROR(graph.StartRun({}));
-  // absl::SleepFor(absl::Milliseconds(1000));
   
   for (int i = 1; i <= 450; ++i) {
+    MP_RETURN_IF_ERROR(
+      gpu_helper.RunInGlContext(
+        [&graph]() -> absl::Status {
+          
+          glFlush();
+          
+          MP_RETURN_IF_ERROR(
+            graph.WaitUntilIdle()
+          );
+
+          return absl::OkStatus();
+        }
+      )
+    );
+
+    // absl::SleepFor(absl::Milliseconds(100));
 
     uint8* data = new uint8[4*480*640];
+    int ptr = 0;
 
     for (int j = 0; j < 480; j ++) {
       for (int k = 0; k < 640; k ++) {
-        int ptr = j*k*4;
+        ptr += 4;
         // rgba
         data[ptr] = (255*i) / 500;
         data[ptr + 1] = 125;
@@ -384,16 +400,34 @@ absl::Status webglCanvasDraw() {
       mediapipe::ImageFrame::kGlDefaultAlignmentBoundary
     );
 
-    MP_RETURN_IF_ERROR(graph.AddPacketToInputStream(
-      "input_video",
-        mediapipe::Adopt(
-          imageFrame
-        ).At(
-          mediapipe::Timestamp(i)
-        )
+    // imageFrame->AdoptPixelData(
+    //   mediapipe::ImageFormat::SRGBA,
+    //   640,
+    //   480, 
+    //   0,
+    //   data
+    // );
+    size_t frame_timestamp_us = i * 1e6;
+
+
+    MP_RETURN_IF_ERROR(
+      gpu_helper.RunInGlContext(
+        [&imageFrame, &frame_timestamp_us, &graph]() -> absl::Status {
+          MP_RETURN_IF_ERROR(          
+            graph.AddPacketToInputStream(
+              "input_video",
+              mediapipe::Adopt(
+                imageFrame
+              ).At(
+                mediapipe::Timestamp(frame_timestamp_us)
+              )
+            )
+          );
+
+          return absl::OkStatus();
+        }
       )
     );
-
   }
 
   // Close the input stream "in".
@@ -401,7 +435,7 @@ absl::Status webglCanvasDraw() {
 
 
   // MP_RETURN_IF_ERROR(graph.WaitUntilDone());
-  MP_RETURN_IF_ERROR(graph.WaitUntilIdle());
+  // MP_RETURN_IF_ERROR(graph.WaitUntilIdle());
 
 
   for (const mediapipe::Packet & p: output_packets) {
