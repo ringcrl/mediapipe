@@ -145,7 +145,7 @@ enum { ATTRIB_VERTEX, ATTRIB_TEXTURE_POSITION, NUM_ATTRIBUTES };
 namespace mediapipe {
 
 
-class WebGLCalculator: public GlSimpleCalculator {
+class RenderGPUBufferToCanvasCalculator: public GlSimpleCalculator {
   public:
   absl::Status GlSetup() override;
   absl::Status GlRender(const GlTexture& src,
@@ -157,10 +157,10 @@ class WebGLCalculator: public GlSimpleCalculator {
   GLint frame_;
 };
 
-REGISTER_CALCULATOR(WebGLCalculator);
+REGISTER_CALCULATOR(RenderGPUBufferToCanvasCalculator);
 
-absl::Status WebGLCalculator::GlSetup() {
-  LOG(INFO) << "WebGLCalculator::GlSetup NUM_ATTRIBUTES:" << NUM_ATTRIBUTES << " ATTRIB_VERTEX:" << ATTRIB_VERTEX << " ATTRIB_TEXTURE_POSITION:" << ATTRIB_TEXTURE_POSITION << "\n";
+absl::Status RenderGPUBufferToCanvasCalculator::GlSetup() {
+  LOG(INFO) << "RenderGPUBufferToCanvasCalculator::GlSetup NUM_ATTRIBUTES:" << NUM_ATTRIBUTES << " ATTRIB_VERTEX:" << ATTRIB_VERTEX << " ATTRIB_TEXTURE_POSITION:" << ATTRIB_TEXTURE_POSITION << "\n";
 
   const GLint attr_location[NUM_ATTRIBUTES] = {
       ATTRIB_VERTEX,
@@ -197,8 +197,11 @@ absl::Status WebGLCalculator::GlSetup() {
       vec4 color = texture2D(video_frame, sample_coordinate);
       // float luminance = dot(color.rgb, W);
       // fragColor.rgb = vec3(luminance);
-      fragColor.rgb = vec3(0.0, 0.0, 1.0);
+      // fragColor.rgb = vec3(0.0, 0.0, 1.0);
+      fragColor.rgb = color.rgb;
+
       fragColor.a = 1.0;
+      // fragColor.a = color.a;
     }
 
   )";
@@ -220,7 +223,7 @@ absl::Status WebGLCalculator::GlSetup() {
   return absl::OkStatus();
 }
 
-absl::Status WebGLCalculator::GlRender(const GlTexture& src, const GlTexture& dst) {
+absl::Status RenderGPUBufferToCanvasCalculator::GlRender(const GlTexture& src, const GlTexture& dst) {
   static const GLfloat square_vertices[] = {
       -1.0f, -1.0f,  // bottom left
       1.0f,  -1.0f,  // bottom right
@@ -278,7 +281,7 @@ absl::Status WebGLCalculator::GlRender(const GlTexture& src, const GlTexture& ds
   return absl::OkStatus();  
 }
 
-absl::Status WebGLCalculator::GlTeardown() {
+absl::Status RenderGPUBufferToCanvasCalculator::GlTeardown() {
   if (program_) {
     glDeleteProgram(program_);
     program_ = 0;
@@ -308,7 +311,7 @@ absl::Status webglCanvasDraw() {
       }
       
       node: {
-        calculator: "WebGLCalculator"
+        calculator: "RenderGPUBufferToCanvasCalculator"
         input_stream: "VIDEO:output_video_gpubuffer"
         output_stream: "VIDEO:output_video"
       }
@@ -349,17 +352,49 @@ absl::Status webglCanvasDraw() {
   });
 
   MP_RETURN_IF_ERROR(graph.StartRun({}));
-
-  absl::SleepFor(absl::Milliseconds(200));
-
+  // absl::SleepFor(absl::Milliseconds(1000));
   
-  
-  for (int i = 0; i < 5; ++i) {
+  for (int i = 1; i <= 450; ++i) {
+
+    uint8* data = new uint8[4*480*640];
+
+    for (int j = 0; j < 480; j ++) {
+      for (int k = 0; k < 640; k ++) {
+        int ptr = j*k*4;
+        // rgba
+        data[ptr] = (255*i) / 500;
+        data[ptr + 1] = 125;
+        data[ptr + 2] = 125;
+        data[ptr + 3] = 1; 
+      }
+    }
+
+    mediapipe::ImageFrame * imageFrame = new mediapipe::ImageFrame(
+      mediapipe::ImageFormat::SRGBA, 
+      640, 
+      480, 
+      mediapipe::ImageFrame::kGlDefaultAlignmentBoundary
+    );
+
+    imageFrame->CopyPixelData(
+      mediapipe::ImageFormat::SRGBA,
+      640,
+      480, 
+      data,
+      mediapipe::ImageFrame::kGlDefaultAlignmentBoundary
+    );
+
     MP_RETURN_IF_ERROR(graph.AddPacketToInputStream(
       "input_video",
-      mediapipe::Adopt(new mediapipe::ImageFrame(mediapipe::ImageFormat::SRGBA, 400, 400)).At(mediapipe::Timestamp(i))));
-  }
+        mediapipe::Adopt(
+          imageFrame
+        ).At(
+          mediapipe::Timestamp(i)
+        )
+      )
+    );
 
+  }
 
   // Close the input stream "in".
   MP_RETURN_IF_ERROR(graph.CloseInputStream("input_video"));

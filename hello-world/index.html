@@ -42,7 +42,7 @@
       }
 
       // Set clear color to black, fully opaque
-      gl.clearColor(0.0, 0.0, 0.0, 0.1); // rgb alpha
+      gl.clearColor(0.0, 1.0, 0.0, 0.5); // rgb alpha
       // Clear the color buffer with specified clear color
       gl.clear(gl.COLOR_BUFFER_BIT);
     }
@@ -53,6 +53,8 @@
 </head>
 <body>
   <canvas id="glCanvas" width="640" height="480"></canvas>
+  <!-- <canvas id="glCanvas"></canvas> -->
+
   <input type="button" value="hello" onclick="hello()"/>
 </body>
 </html>
