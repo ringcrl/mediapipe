@@ -288,66 +288,242 @@ absl::Status RenderGPUBufferToCanvasCalculator::GlTeardown() {
 
 }  // namespace mediapipe
 
-
-absl::Status webglCanvasDraw() {
-
-  // LOG(INFO) << "NUM_ATTRIBUTES:" << NUM_ATTRIBUTES << " ATTRIB_VERTEX:" << ATTRIB_VERTEX << " ATTRIB_TEXTURE_POSITION:" << ATTRIB_TEXTURE_POSITION << "\n";
-
-  mediapipe::CalculatorGraphConfig config =
-    mediapipe::ParseTextProtoOrDie<mediapipe::CalculatorGraphConfig>(R"pb(
-      input_stream: "input_video"
-      output_stream: "output_video"
-
-      # Converts RGB images into luminance images, still stored in RGB format.
-      
-      node: {
-        calculator: "ImageFrameToGpuBufferCalculator"
-        input_stream: "input_video"
-        output_stream: "output_video_gpubuffer"
-      }
-      
-      node: {
-        calculator: "RenderGPUBufferToCanvasCalculator"
-        input_stream: "VIDEO:output_video_gpubuffer"
-        output_stream: "VIDEO:output_video"
-      }
-    )pb");
-
-  // int num_extensions = 0;
-  // glGetIntegerv(GL_NUM_EXTENSIONS, &num_extensions);
-  // LOG(INFO) << "gl_num_extensions:" << num_extensions;
-  // ERROR: Uncaught TypeError: GL.currentContext is undefined
-  
-  // int majorVersion;
-  // glGetIntegerv(GL_MAJOR_VERSION, &majorVersion);
-  // ERROR: Uncaught TypeError: GL.currentContext is undefined
-
-  // LOG(INFO) << "GL_VERSION:" << glGetString(GL_VERSION);
-  // ERROR: Uncaught TypeError: GLctx is undefined
-
-  // LOG(INFO) << glGetString(GL_VENDOR); 
-  // ERROR: Uncaught TypeError: GLctx is undefined
-
-
+class GraphContainer {
+  public:
   mediapipe::CalculatorGraph graph;
-  MP_RETURN_IF_ERROR(graph.Initialize(config));
-  ASSIGN_OR_RETURN(mediapipe::OutputStreamPoller poller,
-                   graph.AddOutputStreamPoller("output_video"));
-  ASSIGN_OR_RETURN(auto gpu_resources, mediapipe::GpuResources::Create());
-  MP_RETURN_IF_ERROR(graph.SetGpuResources(gpu_resources));
+  bool isGraphInitialized = false;
   mediapipe::GlCalculatorHelper gpu_helper;
-  gpu_helper.InitializeForTest(graph.GetGpuResources().get());
-
+  int w = 0;
+  int direction = 1;
+  int runCounter;
   std::vector<mediapipe::Packet> output_packets;
-  
-  graph.ObserveOutputStream("output_video", [&output_packets](const mediapipe::Packet& p) {
-    // output_packets.push_back(p);
-    LOG(INFO) << "observing packet in output_video output stream";
-    // LOG(INFO) << "inside lambda func: packet.Get<std::string>():" << p.Get<std::string>();
-    return absl::OkStatus();
-  });
 
-  MP_RETURN_IF_ERROR(graph.StartRun({}));
+  uint8* data;
+
+  absl::Status setupGraph() {
+
+    mediapipe::CalculatorGraphConfig config =
+      mediapipe::ParseTextProtoOrDie<mediapipe::CalculatorGraphConfig>(R"pb(
+        input_stream: "input_video"
+        output_stream: "output_video"
+
+        # Converts RGB images into luminance images, still stored in RGB format.
+        
+        node: {
+          calculator: "ImageFrameToGpuBufferCalculator"
+          input_stream: "input_video"
+          output_stream: "output_video_gpubuffer"
+        }
+        
+        node: {
+          calculator: "RenderGPUBufferToCanvasCalculator"
+          input_stream: "VIDEO:output_video_gpubuffer"
+          output_stream: "VIDEO:output_video"
+        }
+      )pb");
+
+    MP_RETURN_IF_ERROR(graph.Initialize(config));
+    ASSIGN_OR_RETURN(mediapipe::OutputStreamPoller poller,
+                    graph.AddOutputStreamPoller("output_video"));
+    ASSIGN_OR_RETURN(auto gpu_resources, mediapipe::GpuResources::Create());
+    MP_RETURN_IF_ERROR(graph.SetGpuResources(gpu_resources));
+    gpu_helper.InitializeForTest(graph.GetGpuResources().get());
+    graph.ObserveOutputStream("output_video", [this](const mediapipe::Packet& p) {
+      // LOG(INFO) << "observing packet in output_video output stream";
+      // LOG(INFO) << "inside lambda func: packet.Get<std::string>():" << p.Get<std::string>();
+      return absl::OkStatus();
+    });
+    MP_RETURN_IF_ERROR(graph.StartRun({}));
+
+    return absl::OkStatus();
+  }
+
+  absl::Status init() {
+    isGraphInitialized = false;
+    w = 0;
+    direction = 1;
+    runCounter = 0;
+
+    return this->setupGraph();
+  }
+
+  GraphContainer(uint32 maxWidth, uint32 maxHeight) {  
+    data = (uint8*)malloc(4*480*640);
+
+    absl::Status status = this->init();
+    if (!status.ok()) {
+      LOG(ERROR) << status;
+    }
+  }
+
+  GraphContainer() {  
+    data = (uint8*)malloc(4*480*640);
+
+    absl::Status status = this->init();
+    if (!status.ok()) {
+      LOG(ERROR) << status;
+    }
+  }
+
+
+  absl::Status webglCanvasDraw(uint8* imgData, int imgSize) {
+  
+    uint8* imgPtr = imgData;
+    
+    // int ptr = 0;
+
+    w += direction;
+    if (w == 500 || w == 0) direction = -direction;
+
+    // LOG(INFO) << "w:" << w;
+    LOG(INFO) << "imgSize:" << imgSize << "(4*480*640):" << (4*480*640);
+
+    for (int ptr = 0; ptr < imgSize; ptr += 4) {
+      // for (int j = 0;j < 4; j ++) {  
+    // for (int j = 0; j < 480; j ++) {
+    // // for (int j = 479; j >= 0; j --) {
+    //   for (int k = 0; k < 640; k ++) {
+        // rgba
+        data[ptr] = (255*w) / 500;
+        imgPtr ++;
+        data[ptr + 1] = *imgPtr;
+        imgPtr ++;
+        data[ptr + 2] = *imgPtr;
+        imgPtr ++;
+        data[ptr + 3] = *imgPtr; 
+        imgPtr ++;
+        // ptr += 4;
+      // }
+    }
+
+    mediapipe::ImageFrame * imageFrame = new mediapipe::ImageFrame(
+      mediapipe::ImageFormat::SRGBA, 
+      640, 
+      480, 
+      mediapipe::ImageFrame::kGlDefaultAlignmentBoundary
+    );
+
+    imageFrame->CopyPixelData(
+      mediapipe::ImageFormat::SRGBA,
+      640,
+      480, 
+      data,
+      mediapipe::ImageFrame::kGlDefaultAlignmentBoundary
+    );
+
+    // imageFrame->AdoptPixelData(
+    //   mediapipe::ImageFormat::SRGBA,
+    //   640,
+    //   480, 
+    //   0,
+    //   data
+    // );
+    size_t frame_timestamp_us = runCounter * 1e6;
+    runCounter ++;
+
+    MP_RETURN_IF_ERROR(          
+      graph.AddPacketToInputStream(
+        "input_video",
+        mediapipe::Adopt(
+          imageFrame
+        ).At(
+          mediapipe::Timestamp(frame_timestamp_us)
+        )
+      )
+    ); 
+
+    MP_RETURN_IF_ERROR(
+      gpu_helper.RunInGlContext(
+        [this]() -> absl::Status {
+          
+          glFlush();
+          
+          MP_RETURN_IF_ERROR(
+            this->graph.WaitUntilIdle()
+          );
+
+          return absl::OkStatus();
+        }
+      )
+    );
+
+    // delete imageFrame;
+    // delete data;
+    
+    // MP_RETURN_IF_ERROR(graph.WaitUntilDone());
+    return absl::OkStatus();
+  }
+
+  // std::string runMPGraph(uint8* imgData, int imgSize) {
+  std::string run(uintptr_t imgData, int imgSize) {
+    // absl::Status status = this->webglCanvasDraw(imgData, imgSize);
+
+    absl::Status status = this->webglCanvasDraw(reinterpret_cast<uint8*>(imgData), imgSize);
+
+    if (!status.ok()) {
+      LOG(WARNING) << "Unexpected error " << status;
+    }
+
+    return status.ToString();
+  }
+
+  absl::Status cleanGraph() {
+    MP_RETURN_IF_ERROR(graph.CloseInputStream("input_video"));
+    MP_RETURN_IF_ERROR(graph.CloseAllPacketSources());
+    return absl::OkStatus();
+  }
+
+  ~GraphContainer() {
+    absl::Status stat = cleanGraph();
+    if (!stat.ok()) {
+      LOG(ERROR) << stat;
+    }
+  }
+};
+
+// ------------------------ OLD START -------------------------------
+
+absl::Status webglCanvasDrawBasic(uint8* imgData, int imgSize) {
+  mediapipe::CalculatorGraph graph;
+  mediapipe::GlCalculatorHelper gpu_helper;
+  // LOG(INFO) << "NUM_ATTRIBUTES:" << NUM_ATTRIBUTES << " ATTRIB_VERTEX:" << ATTRIB_VERTEX << " ATTRIB_TEXTURE_POSITION:" << ATTRIB_TEXTURE_POSITION << "\n";
+    mediapipe::CalculatorGraphConfig config =
+      mediapipe::ParseTextProtoOrDie<mediapipe::CalculatorGraphConfig>(R"pb(
+        input_stream: "input_video"
+        output_stream: "output_video"
+
+        # Converts RGB images into luminance images, still stored in RGB format.
+        
+        node: {
+          calculator: "ImageFrameToGpuBufferCalculator"
+          input_stream: "input_video"
+          output_stream: "output_video_gpubuffer"
+        }
+        
+        node: {
+          calculator: "RenderGPUBufferToCanvasCalculator"
+          input_stream: "VIDEO:output_video_gpubuffer"
+          output_stream: "VIDEO:output_video"
+        }
+      )pb");
+
+    MP_RETURN_IF_ERROR(graph.Initialize(config));
+    ASSIGN_OR_RETURN(mediapipe::OutputStreamPoller poller,
+                    graph.AddOutputStreamPoller("output_video"));
+    ASSIGN_OR_RETURN(auto gpu_resources, mediapipe::GpuResources::Create());
+    MP_RETURN_IF_ERROR(graph.SetGpuResources(gpu_resources));
+    gpu_helper.InitializeForTest(graph.GetGpuResources().get());
+
+    std::vector<mediapipe::Packet> output_packets;
+
+    graph.ObserveOutputStream("output_video", [&output_packets](const mediapipe::Packet& p) {
+    // output_packets.push_back(p);
+      LOG(INFO) << "observing packet in output_video output stream";
+      // LOG(INFO) << "inside lambda func: packet.Get<std::string>():" << p.Get<std::string>();
+      return absl::OkStatus();
+    });
+    
+    MP_RETURN_IF_ERROR(graph.StartRun({}));
   
   for (int i = 1; i <= 450; ++i) {
     
@@ -419,7 +595,7 @@ absl::Status webglCanvasDraw() {
   }
 
   // Close the input stream "in".
-  MP_RETURN_IF_ERROR(graph.CloseInputStream("input_video"));
+  // MP_RETURN_IF_ERROR(graph.CloseInputStream("input_video"));
 
 
   // MP_RETURN_IF_ERROR(graph.WaitUntilDone());
@@ -430,13 +606,14 @@ absl::Status webglCanvasDraw() {
 
   MP_RETURN_IF_ERROR(graph.CloseAllPacketSources());
 
-  MP_RETURN_IF_ERROR(absl::InvalidArgumentError("testing MP_RETURN_IF_ERROR macro"));
-  // return absl::OkStatus();
+  // MP_RETURN_IF_ERROR(absl::InvalidArgumentError("testing MP_RETURN_IF_ERROR macro"));
+  return absl::OkStatus();
 }
 
-
-std::string runMPGraph() {
-  absl::Status status = webglCanvasDraw();
+// std::string runMPGraph(uint8* imgData, int imgSize) {
+std::string runMPGraph(uintptr_t imgData, int imgSize) {
+  // absl::Status status = webglCanvasDraw(imgData, imgSize);
+  absl::Status status = webglCanvasDrawBasic(reinterpret_cast<uint8*>(imgData), imgSize);
 
   if (!status.ok()) {
     LOG(WARNING) << "Unexpected error " << status;
@@ -445,9 +622,7 @@ std::string runMPGraph() {
   return status.ToString();
 }
 
-
-
-// } // namespace mediapipe
+// ------------------------ OLD END -------------------------------
 
 
 int main() {}
@@ -457,6 +632,10 @@ EMSCRIPTEN_BINDINGS(Hello_World_Simple) {
   function("helloName", &helloName);
 //   function("helloName", &helloName);
   function("passThrough", &passThrough);
-  function("runMPGraph", &runMPGraph);
-  
+  function("runMPGraph", &runMPGraph, allow_raw_pointers());
+  class_<GraphContainer>("GraphContainer")
+    .constructor()
+    .constructor<int, int>()
+    .function("run", &GraphContainer::run)
+    ;
 }
