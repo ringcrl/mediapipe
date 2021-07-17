@@ -350,21 +350,7 @@ absl::Status webglCanvasDraw() {
   MP_RETURN_IF_ERROR(graph.StartRun({}));
   
   for (int i = 1; i <= 450; ++i) {
-    MP_RETURN_IF_ERROR(
-      gpu_helper.RunInGlContext(
-        [&graph]() -> absl::Status {
-          
-          glFlush();
-          
-          MP_RETURN_IF_ERROR(
-            graph.WaitUntilIdle()
-          );
-
-          return absl::OkStatus();
-        }
-      )
-    );
-
+    
     // absl::SleepFor(absl::Milliseconds(100));
 
     uint8* data = new uint8[4*480*640];
@@ -405,19 +391,25 @@ absl::Status webglCanvasDraw() {
     // );
     size_t frame_timestamp_us = i * 1e6;
 
+    MP_RETURN_IF_ERROR(          
+      graph.AddPacketToInputStream(
+        "input_video",
+        mediapipe::Adopt(
+          imageFrame
+        ).At(
+          mediapipe::Timestamp(frame_timestamp_us)
+        )
+      )
+    ); 
 
     MP_RETURN_IF_ERROR(
       gpu_helper.RunInGlContext(
-        [&imageFrame, &frame_timestamp_us, &graph]() -> absl::Status {
-          MP_RETURN_IF_ERROR(          
-            graph.AddPacketToInputStream(
-              "input_video",
-              mediapipe::Adopt(
-                imageFrame
-              ).At(
-                mediapipe::Timestamp(frame_timestamp_us)
-              )
-            )
+        [&graph]() -> absl::Status {
+          
+          glFlush();
+          
+          MP_RETURN_IF_ERROR(
+            graph.WaitUntilIdle()
           );
 
           return absl::OkStatus();
