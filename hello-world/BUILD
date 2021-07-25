@@ -40,6 +40,9 @@ cc_binary(
         "-s ASSERTIONS=1",
         "--bind",
         "-s STANDALONE_WASM=0", # generates only wasm file, not .js file? generates independent wasm, but missing utilities of js
+        "--preload-file /home/pinku/work/src/github.com/prantoran/mediapipe/assets@assets",
+        # "--preload-file /home/pinku/work/src/github.com/prantoran/mediapipe/mediapipe/modules/face_detection/face_detection_short_range.tflite@mediapipe/modules/face_detection/face_detection_short_range.tflite",
+        "--preload-file /home/pinku/work/src/github.com/prantoran/mediapipe/mediapipe/@mediapipe/",
     ],
     visibility = ["//visibility:public"],
     deps = [
@@ -57,6 +60,7 @@ cc_binary(
         "//mediapipe/framework/formats:image_frame",
         "//mediapipe/gpu:gl_simple_calculator",
         "//mediapipe/gpu:gl_simple_shaders",
+        "//mediapipe/framework/formats:detection_cc_proto",
     ],
 )
 

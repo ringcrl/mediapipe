@@ -15,38 +15,73 @@ function hello() {
     console.log(Module.helloName('alu'));
 }
 
+function runGraphExp(state, videoElem, canvasCtx, Module) {
+    if (!state.graph) {
+        state.graph = new Module.GraphContainer();
+    }
+    const img = new Image();   // Create new img element
+    img.onload = function() {
+        console.log("image loaded.");
+    }
+    img.src = 'res/demo.jpg'; // Set source path
+
+    const interval = setInterval(function() {
+        canvasCtx.drawImage(img, 0, 0, 640, 480);
+        const rawData = canvasCtx.getImageData(0, 0, 640, 480);
+        const rawDataSize = state.imgChannelsCount * rawData.width*rawData.height;
+        // console.log("rawData:", rawData, "rawDataSize:", rawDataSize);
+    
+        if (!state.imgSize || state.imgSize != rawDataSize) {
+            
+            if (state.imgPointer) {
+                Module._free(state.imgPointer);
+            }
+            
+            state.imgSize = rawDataSize;
+            console.log("entered rawDataSize:", rawDataSize, "rawData.height:", rawData.height, "rawData.width:", rawData.width);
+            state.imgPointer = Module._malloc(state.imgSize);
+        }
+    
+        Module.HEAPU8.set(rawData.data, state.imgPointer);
+        const ret = state.graph.run(state.imgPointer, state.imgSize);
+
+    }, 200);
+    
+    console.log("interval:", interval);
+}
+
 function runGraph(state, videoElem, canvasCtx, Module) {
     // console.log("Camera:", Camera);
     if (!state.graph) {
         state.graph = new Module.GraphContainer();
     }
-
-    const camera = new Camera(videoElem, {
-        onFrame: async () => {
-            canvasCtx.drawImage(videoElem, 0, 0, 640, 480);
-            const rawData = canvasCtx.getImageData(0, 0, 640, 480);
-            const rawDataSize = state.imgChannelsCount * rawData.width*rawData.height;
-            // console.log("rawData:", rawData, "rawDataSize:", rawDataSize);
-
-            if (!state.imgSize || state.imgSize != rawDataSize) {
-                
-                if (state.imgPointer) {
-                    Module._free(state.imgPointer);
+    
+        const camera = new Camera(videoElem, {
+            onFrame: async () => {
+                canvasCtx.drawImage(videoElem, 0, 0, 640, 480);
+                const rawData = canvasCtx.getImageData(0, 0, 640, 480);
+                const rawDataSize = state.imgChannelsCount * rawData.width*rawData.height;
+                // console.log("rawData:", rawData, "rawDataSize:", rawDataSize);
+    
+                if (!state.imgSize || state.imgSize != rawDataSize) {
+                    
+                    if (state.imgPointer) {
+                        Module._free(state.imgPointer);
+                    }
+                    
+                    state.imgSize = rawDataSize;
+                    console.log("entered rawDataSize:", rawDataSize, "rawData.height:", rawData.height, "rawData.width:", rawData.width);
+                    state.imgPointer = Module._malloc(state.imgSize);
                 }
-                
-                state.imgSize = rawDataSize;
-                console.log("entered rawDataSize:", rawDataSize, "rawData.height:", rawData.height, "rawData.width:", rawData.width);
-                state.imgPointer = Module._malloc(state.imgSize);
-            }
-
-            Module.HEAPU8.set(rawData.data, state.imgPointer);
-            const ret = state.graph.run(state.imgPointer, state.imgSize);
-        },
-        width: 640,
-        height: 480
-    });
-
-    camera.start();
+    
+                Module.HEAPU8.set(rawData.data, state.imgPointer);
+                const ret = state.graph.run(state.imgPointer, state.imgSize);
+            },
+            width: 640,
+            height: 480
+        });
+    
+        camera.start();
     // Module.runMPGraph();
 }
 
@@ -94,7 +129,8 @@ window.onload = function() {
     gl.clear(gl.COLOR_BUFFER_BIT);
     
     document.getElementById("btnRunGraph").onclick = function() {
-        runGraph(state, videoElement, canvasCtx, Module);
+        // runGraph(state, videoElement, canvasCtx, Module);
+        runGraphExp(state, videoElement, canvasCtx, Module);
     }
 }
 

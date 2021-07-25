@@ -20,6 +20,7 @@
 #include "mediapipe/gpu/gl_simple_calculator.h"
 #include "mediapipe/gpu/gl_simple_shaders.h" // GLES_VERSION_COMPAT
 #include "mediapipe/gpu/shader_util.h"
+#include "mediapipe/framework/formats/detection.pb.h"
 
 using namespace emscripten;
 
@@ -300,18 +301,36 @@ class GraphContainer {
 
   uint8* data;
 
-  absl::Status setupGraph() {
+  int* prvTemp;
 
-    mediapipe::CalculatorGraphConfig config =
-      mediapipe::ParseTextProtoOrDie<mediapipe::CalculatorGraphConfig>(R"pb(
+  std::string graphConfigWithRender = R"pb(
         input_stream: "input_video"
         output_stream: "output_video"
+        output_stream: "face_detections"
+        max_queue_size: 5
 
         # Converts RGB images into luminance images, still stored in RGB format.
-        
+        node {
+          calculator: "FlowLimiterCalculator"
+          input_stream: "input_video"
+          input_stream: "FINISHED:output_video"
+          input_stream_info: {
+            tag_index: "FINISHED"
+            back_edge: true
+          }
+          output_stream: "throttled_input_video"
+        }
+
+        # Subgraph that detects faces.
+        #node {
+        #  calculator: "FaceDetectionShortRangeCpu"
+        #  input_stream: "IMAGE:throttled_input_video"
+        #  output_stream: "DETECTIONS:face_detections"
+        #}
+
         node: {
           calculator: "ImageFrameToGpuBufferCalculator"
-          input_stream: "input_video"
+          input_stream: "throttled_input_video"
           output_stream: "output_video_gpubuffer"
         }
         
@@ -320,11 +339,42 @@ class GraphContainer {
           input_stream: "VIDEO:output_video_gpubuffer"
           output_stream: "VIDEO:output_video"
         }
-      )pb");
+      )pb";
+  
+  std::string graphConfigFaceDetect = R"pb(
+
+        input_stream: "input_video"
+        # output_stream: "output_video"
+        output_stream: "detections"
+
+        node {
+          calculator: "FlowLimiterCalculator"
+          input_stream: "input_video"
+          input_stream: "FINISHED:output_video"
+          input_stream_info: {
+            tag_index: "FINISHED"
+            back_edge: true
+          }
+          output_stream: "throttled_input_video"
+        }
+
+        # Subgraph that detects faces.
+        node {
+          calculator: "FaceDetectionShortRangeCpu"
+          input_stream: "IMAGE:throttled_input_video"
+          output_stream: "DETECTIONS:detections"
+        }
+      )pb";
+
+  absl::Status setupGraph() {
+    mediapipe::CalculatorGraphConfig config =
+      mediapipe::ParseTextProtoOrDie<mediapipe::CalculatorGraphConfig>(graphConfigWithRender);
 
     MP_RETURN_IF_ERROR(graph.Initialize(config));
     ASSIGN_OR_RETURN(mediapipe::OutputStreamPoller poller,
                     graph.AddOutputStreamPoller("output_video"));
+    // ASSIGN_OR_RETURN(mediapipe::OutputStreamPoller pollerDetections,
+    //                 graph.AddOutputStreamPoller("detections"));
     ASSIGN_OR_RETURN(auto gpu_resources, mediapipe::GpuResources::Create());
     MP_RETURN_IF_ERROR(graph.SetGpuResources(gpu_resources));
     gpu_helper.InitializeForTest(graph.GetGpuResources().get());
@@ -333,6 +383,20 @@ class GraphContainer {
       // LOG(INFO) << "inside lambda func: packet.Get<std::string>():" << p.Get<std::string>();
       return absl::OkStatus();
     });
+
+    // graph.ObserveOutputStream("detections", [this](const mediapipe::Packet& p) {
+    //   const auto& detections = p.Get<std::vector<mediapipe::Detection>>();
+
+    //   LOG(INFO) << "detections size:" << detections.size();
+
+    //   // for (const mediapipe::Detection & d: detections) {
+    //   //   LOG(INFO) << "has_detection_id:" << d.has_detection_id(); // << " detection_id:" << d.detection_id() << " score:" << d.score();
+    //   // }
+
+    //   return absl::OkStatus();
+    // });
+
+
     MP_RETURN_IF_ERROR(graph.StartRun({}));
 
     return absl::OkStatus();
@@ -343,13 +407,23 @@ class GraphContainer {
     w = 0;
     direction = 1;
     runCounter = 0;
+    prvTemp = nullptr;
+
+    FILE* ret = freopen("assets/in.txt", "r", stdin);
+    if (ret == nullptr) {
+      LOG(ERROR) << "could not open assets/in.txt";
+    }
+    int n;
+    while (std::cin >> n) {
+      LOG(INFO) << "From file: " << n;
+    }
 
     return this->setupGraph();
   }
 
   GraphContainer(uint32 maxWidth, uint32 maxHeight) {  
     data = (uint8*)malloc(4*480*640);
-
+    
     absl::Status status = this->init();
     if (!status.ok()) {
       LOG(ERROR) << status;
@@ -367,7 +441,14 @@ class GraphContainer {
 
 
   absl::Status webglCanvasDraw(uint8* imgData, int imgSize) {
-  
+
+    int* temp = (int *) malloc(5000);
+    if (prvTemp == nullptr) prvTemp = temp;
+    printf("temp: %d, change: %d \n", static_cast<int *>(temp), (temp - prvTemp));
+    prvTemp = temp;
+    free(temp);
+
+
     uint8* imgPtr = imgData;
     
     // int ptr = 0;
@@ -396,20 +477,32 @@ class GraphContainer {
       // }
     }
 
-    mediapipe::ImageFrame * imageFrame = new mediapipe::ImageFrame(
-      mediapipe::ImageFormat::SRGBA, 
-      640, 
-      480, 
-      mediapipe::ImageFrame::kGlDefaultAlignmentBoundary
-    );
+    auto imageFrame =
+        absl::make_unique<mediapipe::ImageFrame>(mediapipe::ImageFormat::SRGBA, 640, 480,
+                                    mediapipe::ImageFrame::kGlDefaultAlignmentBoundary);
+    int img_data_size = 640 * 480 * 4;
+    std::memcpy(imageFrame->MutablePixelData(), data,
+                img_data_size);
+    // if (!(graph_.AddPacketToInputStream(
+    //           "input_video", Adopt(imageFrame.release())
+    //               .At(currentTimestamp()))) {
+    //                 LOG(ERROR) << "could not add packet to graph";
+                  // }
 
-    imageFrame->CopyPixelData(
-      mediapipe::ImageFormat::SRGBA,
-      640,
-      480, 
-      data,
-      mediapipe::ImageFrame::kGlDefaultAlignmentBoundary
-    );
+    // mediapipe::ImageFrame * imageFrame = new mediapipe::ImageFrame(
+    //   mediapipe::ImageFormat::SRGBA, 
+    //   640, 
+    //   480, 
+    //   mediapipe::ImageFrame::kGlDefaultAlignmentBoundary
+    // );
+
+    // imageFrame->CopyPixelData(
+    //   mediapipe::ImageFormat::SRGBA,
+    //   640,
+    //   480, 
+    //   data,
+    //   mediapipe::ImageFrame::kGlDefaultAlignmentBoundary
+    // );
 
     // imageFrame->AdoptPixelData(
     //   mediapipe::ImageFormat::SRGBA,
@@ -425,7 +518,7 @@ class GraphContainer {
       graph.AddPacketToInputStream(
         "input_video",
         mediapipe::Adopt(
-          imageFrame
+          imageFrame.release()
         ).At(
           mediapipe::Timestamp(frame_timestamp_us)
         )
