@@ -45,6 +45,24 @@ function runGraphExp(state, videoElem, canvasCtx, Module) {
         Module.HEAPU8.set(rawData.data, state.imgPointer);
         const ret = state.graph.run(state.imgPointer, state.imgSize);
 
+        const n = state.graph.boundingBoxes.size();
+        console.log("n:", n, "state.graph.boundingBoxes", state.graph.boundingBoxes);
+
+        canvasCtx.strokeStyle = "purple";
+        canvasCtx.lineWidth = 3;
+        canvasCtx.globalAlpha = 0.4;
+
+        for (let i = 0; i < n; i ++) {
+            console.log("i:", i);
+            const bb = state.graph.boundingBoxes.get(i);
+            const w = bb.width * rawData.width;
+            const h = bb.height * rawData.height;
+            const x = bb.x * rawData.width;
+            const y = bb.y * rawData.height;
+            canvasCtx.strokeRect(x, y, w, h);
+
+            console.log("x:", x, "y:", y, "w:", w, "h:", h);
+        }
     }, 200);
     
     console.log("interval:", interval);
@@ -76,6 +94,25 @@ function runGraph(state, videoElem, canvasCtx, Module) {
     
                 Module.HEAPU8.set(rawData.data, state.imgPointer);
                 const ret = state.graph.run(state.imgPointer, state.imgSize);
+
+                const n = state.graph.boundingBoxes.size();
+                console.log("n:", n, "state.graph.boundingBoxes", state.graph.boundingBoxes);
+
+                canvasCtx.strokeStyle = "purple";
+                canvasCtx.lineWidth = 3;
+                canvasCtx.globalAlpha = 0.4;
+
+                for (let i = 0; i < n; i ++) {
+                    console.log("i:", i);
+                    const bb = state.graph.boundingBoxes.get(i);
+                    const w = bb.width * rawData.width;
+                    const h = bb.height * rawData.height;
+                    const x = bb.x * rawData.width;
+                    const y = bb.y * rawData.height;
+                    canvasCtx.strokeRect(x, y, w, h);
+
+                    console.log("x:", x, "y:", y, "w:", w, "h:", h);
+                }
             },
             width: 640,
             height: 480
@@ -129,8 +166,8 @@ window.onload = function() {
     gl.clear(gl.COLOR_BUFFER_BIT);
     
     document.getElementById("btnRunGraph").onclick = function() {
-        // runGraph(state, videoElement, canvasCtx, Module);
-        runGraphExp(state, videoElement, canvasCtx, Module);
+        runGraph(state, videoElement, canvasCtx, Module);
+        // runGraphExp(state, videoElement, canvasCtx, Module);
     }
 }
 

@@ -21,6 +21,7 @@
 #include "mediapipe/gpu/gl_simple_shaders.h" // GLES_VERSION_COMPAT
 #include "mediapipe/gpu/shader_util.h"
 #include "mediapipe/framework/formats/detection.pb.h"
+#include "mediapipe/framework/formats/location_data.pb.h"
 
 using namespace emscripten;
 
@@ -228,13 +229,13 @@ absl::Status RenderGPUBufferToCanvasCalculator::GlRender(const GlTexture& src, c
       1.0f,  1.0f,   // top right
   };
   static const GLfloat texture_vertices[] = {
-      0.0f, 0.0f,  // bottom left
-      1.0f, 0.0f,  // bottom right
       0.0f, 1.0f,  // top left
       1.0f, 1.0f,  // top right
+      0.0f, 0.0f,  // bottom left
+      1.0f, 0.0f,  // bottom right
   };
 
-  glBindFramebuffer(GL_FRAMEBUFFER, 0);
+  glBindFramebuffer(GL_FRAMEBUFFER, 0); // binding to canvas
 
   // program
   glUseProgram(program_);
@@ -289,6 +290,21 @@ absl::Status RenderGPUBufferToCanvasCalculator::GlTeardown() {
 
 }  // namespace mediapipe
 
+class BoundingBox {
+  public:
+  float x, y, width, height;
+
+  BoundingBox(float x, float y, float w, float h) {
+    this->x = x;
+    this->y = y; 
+    this->width = w;
+    this->height = h;
+  }
+
+  BoundingBox() {}
+};
+
+
 class GraphContainer {
   public:
   mediapipe::CalculatorGraph graph;
@@ -302,38 +318,30 @@ class GraphContainer {
   uint8* data;
 
   int* prvTemp;
-
+  std::vector<BoundingBox> boundingBoxes;
+  
   std::string graphConfigWithRender = R"pb(
         input_stream: "input_video"
         output_stream: "output_video"
         output_stream: "face_detections"
         max_queue_size: 5
 
-        # Converts RGB images into luminance images, still stored in RGB format.
-        node {
-          calculator: "FlowLimiterCalculator"
-          input_stream: "input_video"
-          input_stream: "FINISHED:output_video"
-          input_stream_info: {
-            tag_index: "FINISHED"
-            back_edge: true
-          }
-          output_stream: "throttled_input_video"
-        }
-
-        # Subgraph that detects faces.
-        #node {
-        #  calculator: "FaceDetectionShortRangeCpu"
-        #  input_stream: "IMAGE:throttled_input_video"
-        #  output_stream: "DETECTIONS:face_detections"
-        #}
+      
 
         node: {
           calculator: "ImageFrameToGpuBufferCalculator"
-          input_stream: "throttled_input_video"
+          input_stream: "input_video"
           output_stream: "output_video_gpubuffer"
         }
-        
+      
+        # Converts RGB images into luminance images, still stored in RGB format.
+        # Subgraph that detects faces.
+        node {
+          calculator: "FaceDetectionShortRangeGpu"
+          input_stream: "IMAGE:output_video_gpubuffer"
+          output_stream: "DETECTIONS:face_detections"
+        }
+
         node: {
           calculator: "RenderGPUBufferToCanvasCalculator"
           input_stream: "VIDEO:output_video_gpubuffer"
@@ -341,32 +349,9 @@ class GraphContainer {
         }
       )pb";
   
-  std::string graphConfigFaceDetect = R"pb(
-
-        input_stream: "input_video"
-        # output_stream: "output_video"
-        output_stream: "detections"
-
-        node {
-          calculator: "FlowLimiterCalculator"
-          input_stream: "input_video"
-          input_stream: "FINISHED:output_video"
-          input_stream_info: {
-            tag_index: "FINISHED"
-            back_edge: true
-          }
-          output_stream: "throttled_input_video"
-        }
-
-        # Subgraph that detects faces.
-        node {
-          calculator: "FaceDetectionShortRangeCpu"
-          input_stream: "IMAGE:throttled_input_video"
-          output_stream: "DETECTIONS:detections"
-        }
-      )pb";
 
   absl::Status setupGraph() {
+
     mediapipe::CalculatorGraphConfig config =
       mediapipe::ParseTextProtoOrDie<mediapipe::CalculatorGraphConfig>(graphConfigWithRender);
 
@@ -384,17 +369,40 @@ class GraphContainer {
       return absl::OkStatus();
     });
 
-    // graph.ObserveOutputStream("detections", [this](const mediapipe::Packet& p) {
-    //   const auto& detections = p.Get<std::vector<mediapipe::Detection>>();
+    graph.ObserveOutputStream("face_detections", [this](const mediapipe::Packet& p) {
+      const auto& detections = p.Get<std::vector<mediapipe::Detection>>();
 
-    //   LOG(INFO) << "detections size:" << detections.size();
+      const int n = detections.size();
 
-    //   // for (const mediapipe::Detection & d: detections) {
-    //   //   LOG(INFO) << "has_detection_id:" << d.has_detection_id(); // << " detection_id:" << d.detection_id() << " score:" << d.score();
-    //   // }
+      this->boundingBoxes.resize(n);
+      float xmin, ymin, width, height;
 
-    //   return absl::OkStatus();
-    // });
+      for (int i = 0; i < n; i ++) {
+        mediapipe::LocationData loc = detections[i].location_data();
+
+        if (loc.format() == mediapipe::LocationData::RELATIVE_BOUNDING_BOX) {
+          auto boundingBox = loc.relative_bounding_box();
+          xmin = boundingBox.xmin();
+          ymin = boundingBox.ymin();
+          width = boundingBox.width();
+          height = boundingBox.height();
+          this->boundingBoxes[i].x = xmin;
+          this->boundingBoxes[i].y = ymin;
+          this->boundingBoxes[i].width = width;
+          this->boundingBoxes[i].height = height;
+        }
+
+        LOG(INFO) <<  " xmin:" << xmin << " ymin:" << ymin << " width:" << width << " height:" << height;
+      }
+
+      LOG(INFO) << "detections size:" << n;
+
+      // for (const mediapipe::Detection & d: detections) {
+      //   LOG(INFO) << "has_detection_id:" << d.has_detection_id(); // << " detection_id:" << d.detection_id() << " score:" << d.score();
+      // }
+
+      return absl::OkStatus();
+    });
 
 
     MP_RETURN_IF_ERROR(graph.StartRun({}));
@@ -548,6 +556,7 @@ class GraphContainer {
   }
 
   // std::string runMPGraph(uint8* imgData, int imgSize) {
+  // std::vector<BoundingBox> run(uintptr_t imgData, int imgSize) {
   std::string run(uintptr_t imgData, int imgSize) {
     // absl::Status status = this->webglCanvasDraw(imgData, imgSize);
 
@@ -730,5 +739,15 @@ EMSCRIPTEN_BINDINGS(Hello_World_Simple) {
     .constructor()
     .constructor<int, int>()
     .function("run", &GraphContainer::run)
+    .property("boundingBoxes", &GraphContainer::boundingBoxes)
     ;
+  class_<BoundingBox>("BoundingBox")
+    // .constructor<float, float, float, float>()
+    .property("x", &BoundingBox::x)
+    .property("y", &BoundingBox::y)
+    .property("width", &BoundingBox::width)
+    .property("height", &BoundingBox::height)
+    ;
+  register_vector<BoundingBox>("vector<BoundingBox>");
+  
 }
