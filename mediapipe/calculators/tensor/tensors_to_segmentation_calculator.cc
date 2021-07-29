@@ -20,10 +20,14 @@
 #include "mediapipe/framework/calculator_context.h"
 #include "mediapipe/framework/calculator_framework.h"
 #include "mediapipe/framework/formats/image.h"
+
+#if !defined(__EMSCRIPTEN__)
 #include "mediapipe/framework/formats/image_opencv.h"
+#include "mediapipe/framework/port/opencv_imgproc_inc.h"
+#endif
+
 #include "mediapipe/framework/formats/tensor.h"
 #include "mediapipe/framework/port.h"
-#include "mediapipe/framework/port/opencv_imgproc_inc.h"
 #include "mediapipe/framework/port/ret_check.h"
 #include "mediapipe/framework/port/statusor.h"
 #include "mediapipe/gpu/gpu_origin.pb.h"

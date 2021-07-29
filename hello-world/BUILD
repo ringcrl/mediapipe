@@ -43,6 +43,8 @@ cc_binary(
         "--preload-file /home/pinku/work/src/github.com/prantoran/mediapipe/assets@assets",
         "--preload-file /home/pinku/work/src/github.com/prantoran/mediapipe/mediapipe/modules/face_detection/face_detection_short_range.tflite@mediapipe/modules/face_detection/face_detection_short_range.tflite",
         # "--preload-file /home/pinku/work/src/github.com/prantoran/mediapipe/mediapipe/@mediapipe/",
+        "--preload-file /home/pinku/work/src/github.com/prantoran/mediapipe/mediapipe/modules/selfie_segmentation/selfie_segmentation.tflite@mediapipe/modules/selfie_segmentation/selfie_segmentation.tflite",
+        "--preload-file /home/pinku/work/src/github.com/prantoran/mediapipe/mediapipe/modules/selfie_segmentation/selfie_segmentation_landscape.tflite@mediapipe/modules/selfie_segmentation/selfie_segmentation_landscape.tflite",
     ],
     visibility = ["//visibility:public"],
     deps = [
@@ -63,6 +65,15 @@ cc_binary(
         "//mediapipe/framework/formats:detection_cc_proto",
         "//mediapipe/framework/formats:location_data_cc_proto",
         "//mediapipe/modules/face_detection:face_detection_short_range_gpu",
+        # "//mediapipe/modules/selfie_segmentation:selfie_segmentation_gpu",
+        "//mediapipe/modules/selfie_segmentation:selfie_segmentation_model_loader",
+        "//mediapipe/calculators/image:image_properties_calculator",
+        "//mediapipe/calculators/tensor:image_to_tensor_calculator",
+        "//mediapipe/calculators/tensor:inference_calculator",
+        "//mediapipe/calculators/tensor:tensors_to_segmentation_calculator",
+        "//mediapipe/calculators/tflite:tflite_custom_op_resolver_calculator",
+        "//mediapipe/calculators/util:from_image_calculator",
+        "//mediapipe/framework/tool:switch_container",
     ],
 )
 

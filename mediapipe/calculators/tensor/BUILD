@@ -819,9 +819,7 @@ cc_library(
         "@com_google_absl//absl/types:span",
         "//mediapipe/framework/formats:image",
         "//mediapipe/framework/formats:image_frame",
-        "//mediapipe/framework/formats:image_opencv",
         "//mediapipe/framework/formats:tensor",
-        "//mediapipe/framework/port:opencv_imgproc",
         "//mediapipe/framework/port:ret_check",
         "//mediapipe/framework:calculator_context",
         "//mediapipe/framework:calculator_framework",
@@ -850,6 +848,12 @@ cc_library(
             "@org_tensorflow//tensorflow/lite/delegates/gpu/gl:gl_shader",
             "@org_tensorflow//tensorflow/lite/delegates/gpu/gl:gl_texture",
             "@org_tensorflow//tensorflow/lite/delegates/gpu/gl/converters:util",
+        ],
+    }) + selects.with_or({
+        "//mediapipe:emscripten_wasm": [],
+        "//conditions:default": [
+            "//mediapipe/framework/formats:image_opencv",
+            "//mediapipe/framework/port:opencv_imgproc",
         ],
     }),
     alwayslink = 1,
