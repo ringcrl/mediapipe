@@ -164,8 +164,10 @@ class TensorsToSegmentationCalculator : public CalculatorBase {
     return options_.gpu_origin() != mediapipe::GpuOrigin_Mode_TOP_LEFT;
   }
 
-  template <class T>
-  absl::Status ApplyActivation(cv::Mat& tensor_mat, cv::Mat* small_mask_mat);
+  #if !defined(__EMSCRIPTEN__)
+    template <class T>
+    absl::Status ApplyActivation(cv::Mat& tensor_mat, cv::Mat* small_mask_mat);
+  #endif // !defined(__EMSCRIPTEN__)
 
   ::mediapipe::TensorsToSegmentationCalculatorOptions options_;
 
@@ -329,6 +331,8 @@ absl::Status TensorsToSegmentationCalculator::ProcessCpu(
     output_height = size.second;
   }
 
+  #if !defined(__EMSCRIPTEN__)
+  
   // Create initial working mask.
   cv::Mat small_mask_mat(cv::Size(tensor_width, tensor_height), CV_32FC1);
 
@@ -365,8 +369,13 @@ absl::Status TensorsToSegmentationCalculator::ProcessCpu(
   cv::resize(small_mask_mat, output_mat, cv::Size(output_width, output_height));
   cc->Outputs().Tag(kMaskTag).Add(output_mask.release(), cc->InputTimestamp());
 
+  #endif // !defined(__EMSCRIPTEN__)
+
   return absl::OkStatus();
 }
+
+
+#if !defined(__EMSCRIPTEN__)
 
 template <class T>
 absl::Status TensorsToSegmentationCalculator::ApplyActivation(
@@ -415,6 +424,8 @@ absl::Status TensorsToSegmentationCalculator::ApplyActivation(
 
   return absl::OkStatus();
 }
+
+#endif // !defined(__EMSCRIPTEN__)
 
 // Steps:
 // 1. receive tensor

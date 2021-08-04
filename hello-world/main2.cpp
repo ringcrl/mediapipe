@@ -324,6 +324,8 @@ class GraphContainer {
         input_stream: "input_video"
         output_stream: "output_video"
         output_stream: "face_detections"
+        output_stream: "segmentation_mask"
+        output_stream: "output_video_with_segmentation"
         max_queue_size: 5
 
       
@@ -342,9 +344,31 @@ class GraphContainer {
           output_stream: "DETECTIONS:face_detections"
         }
 
+        node {
+          calculator: "SelfieSegmentationGpu"
+          input_stream: "IMAGE:output_video_gpubuffer"
+          output_stream: "SEGMENTATION_MASK:segmentation_mask"
+        }
+
+        # Colors the selfie segmentation with the color specified in the option.
+        node {
+          calculator: "RecolorCalculator"
+          input_stream: "IMAGE_GPU:output_video_gpubuffer"
+          input_stream: "MASK_GPU:segmentation_mask"
+          output_stream: "IMAGE_GPU:output_video_with_segmentation"
+          node_options: {
+            [type.googleapis.com/mediapipe.RecolorCalculatorOptions] {
+              color { r: 255 g: 0 b: 0 }
+              mask_channel: RED
+              invert_mask: true
+              adjust_with_luminance: false
+            }
+          }
+        }
+
         node: {
           calculator: "RenderGPUBufferToCanvasCalculator"
-          input_stream: "VIDEO:output_video_gpubuffer"
+          input_stream: "VIDEO:output_video_with_segmentation"
           output_stream: "VIDEO:output_video"
         }
       )pb";
@@ -368,6 +392,10 @@ class GraphContainer {
       // LOG(INFO) << "inside lambda func: packet.Get<std::string>():" << p.Get<std::string>();
       return absl::OkStatus();
     });
+
+    // graph.ObserveOutputStream("segmentation_mask", [this](const mediapipe::Packet& p) {
+    //   const mediapipe::GpuBuffer & mask_buffer = p.Get<mediapipe::GpuBuffer>();
+    // });
 
     graph.ObserveOutputStream("face_detections", [this](const mediapipe::Packet& p) {
       const auto& detections = p.Get<std::vector<mediapipe::Detection>>();
@@ -473,11 +501,11 @@ class GraphContainer {
     // // for (int j = 479; j >= 0; j --) {
     //   for (int k = 0; k < 640; k ++) {
         // rgba
-        data[ptr] = (255*w) / 500;
+        data[ptr] = *imgPtr;
         imgPtr ++;
         data[ptr + 1] = *imgPtr;
         imgPtr ++;
-        data[ptr + 2] = *imgPtr;
+        data[ptr + 2] = *imgPtr; //(255*w) / 500;
         imgPtr ++;
         data[ptr + 3] = *imgPtr; 
         imgPtr ++;
