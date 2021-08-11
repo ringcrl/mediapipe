@@ -1,6 +1,8 @@
 
 eg:
 	./scripts/example.sh
+egseg:
+	./scripts/egseg.sh
 build-wasm:
 	./scripts/build-wasm.sh
 build:

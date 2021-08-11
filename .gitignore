@@ -6,4 +6,6 @@ mediapipe/provisioning_profile.mobileprovision
 .user.bazelrc
 hello-server/public/hello-world-simple.wasm
 hello-server/public/hello-world-simple.js
+hello-server/public/hello-world-simple.data
 node_modules
+assets/in.txt

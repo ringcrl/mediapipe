@@ -27,9 +27,35 @@ WASM_LINKOPTS = [
 # notes
 # warning: Link with `-s LLD_REPORT_UNDEFINED` to get more information on undefined symbols
 
+
+cc_library(
+    name = "canvas_renderer",
+    hdrs = ["renderer.h"],
+    srcs = ["renderer.cc"],
+    deps = [
+        "//mediapipe/framework/port:logging",
+        "//mediapipe/framework/port:parse_text_proto",
+        "//mediapipe/framework/port:status",
+        "//mediapipe/gpu:gpu_buffer",
+        "//mediapipe/gpu:gpu_shared_data_internal",
+        "//mediapipe/gpu:gl_calculator_helper",
+        "//mediapipe/gpu:image_frame_to_gpu_buffer_calculator",
+        "//mediapipe/framework:calculator_framework",
+        "//mediapipe/framework/formats:image_frame",
+        "//mediapipe/gpu:gl_simple_calculator",
+        "//mediapipe/gpu:gl_simple_shaders",
+    ]
+)
+
+
 cc_binary(
     name = "hello-world-simple",
-    srcs = ["main2.cpp"],
+    srcs = [
+        "main2.cpp",
+        # "renderer.h", 
+        # "renderer.cc"
+    ],
+    
     linkopts = [
         "-s USE_PTHREADS=0",
         "-s ALLOW_MEMORY_GROWTH=1",
@@ -48,6 +74,7 @@ cc_binary(
     ],
     visibility = ["//visibility:public"],
     deps = [
+        # ":canvas_renderer",
         "//hello-world/cpp:popen",
         "//mediapipe/calculators/core:pass_through_calculator",
         "//mediapipe/framework:calculator_graph",
@@ -67,6 +94,7 @@ cc_binary(
         "//mediapipe/modules/face_detection:face_detection_short_range_gpu",
         "//mediapipe/modules/selfie_segmentation:selfie_segmentation_gpu",
         "//mediapipe/calculators/image:recolor_calculator",
+        "//mediapipe/graphs/selfie_segmentation:selfie_segmentation_gpu_deps",
     ],
 )
 

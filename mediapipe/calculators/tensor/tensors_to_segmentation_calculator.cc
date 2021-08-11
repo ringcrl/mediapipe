@@ -250,7 +250,13 @@ absl::Status TensorsToSegmentationCalculator::Process(CalculatorContext* cc) {
   const auto& input_tensors =
       cc->Inputs().Tag(kTensorsTag).Get<std::vector<Tensor>>();
 
+
+#if !defined(__EMSCRIPTEN__) 
   bool use_gpu = false;
+#else
+  bool use_gpu = true; // important: setting to default true for wasm canvas rendering
+#endif
+
   if (CanUseGpu()) {
     // Use GPU processing only if at least one input tensor is already on GPU.
     for (const auto& tensor : input_tensors) {
