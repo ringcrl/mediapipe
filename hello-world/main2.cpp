@@ -25,10 +25,8 @@
 
 using namespace emscripten;
 
-constexpr char kMaskGpuTag[] = "MASK_GPU";
-
-
 enum { ATTRIB_VERTEX, ATTRIB_TEXTURE_POSITION, NUM_ATTRIBUTES };
+constexpr char kMaskGpuTag[] = "MASK_GPU";
 
 
 namespace mediapipe {
@@ -57,8 +55,7 @@ class RenderGPUBufferToCanvasCalculator: public CalculatorBase {
   virtual GpuBufferFormat GetOutputFormat() { return GpuBufferFormat::kBGRA32; } 
   
   absl::Status GlSetup();
-  absl::Status GlRender(const GlTexture& src,
-                        const GlTexture& dst);
+  absl::Status GlRender(); //(const GlTexture& src, const GlTexture& dst);
   absl::Status GlTeardown();
 
  protected:
@@ -72,18 +69,41 @@ class RenderGPUBufferToCanvasCalculator: public CalculatorBase {
   bool initialized_;
   
   private:
+  absl::Status LoadOptions(CalculatorContext* cc);
+  
   GLuint program_ = 0;
-  GLint frame_;
+  GLint frame_, mask_, recolor_, invertmask_, adjustwith_luminance_;
+  std::vector<uint8> color_;
+  bool invert_mask_ = false;
+  bool adjust_with_luminance_ = false;
 };
 
 REGISTER_CALCULATOR(RenderGPUBufferToCanvasCalculator);
 
+absl::Status RenderGPUBufferToCanvasCalculator::LoadOptions(CalculatorContext* cc) {
+  // implement fetching options here
+  // mask_channel_ = options.mask_channel();
+
+  return absl::OkStatus();
+}
+
+
 absl::Status RenderGPUBufferToCanvasCalculator::GetContract(CalculatorContract* cc) {
+  RET_CHECK(!cc->Inputs().GetTags().empty());
+  RET_CHECK(!cc->Outputs().GetTags().empty());
+
   TagOrIndex(&cc->Inputs(), "VIDEO", 0).Set<GpuBuffer>();
   TagOrIndex(&cc->Outputs(), "VIDEO", 0).Set<GpuBuffer>();
+
+  if (cc->Inputs().HasTag(kMaskGpuTag)) {
+    cc->Inputs().Tag(kMaskGpuTag).Set<mediapipe::GpuBuffer>();
+  }
+
   // Currently we pass GL context information and other stuff as external
   // inputs, which are handled by the helper.
-  return GlCalculatorHelper::UpdateContract(cc);
+  MP_RETURN_IF_ERROR(GlCalculatorHelper::UpdateContract(cc));
+
+  return absl::OkStatus();
 }
 
 absl::Status RenderGPUBufferToCanvasCalculator::Open(CalculatorContext* cc) {
@@ -92,46 +112,76 @@ absl::Status RenderGPUBufferToCanvasCalculator::Open(CalculatorContext* cc) {
   cc->SetOffset(mediapipe::TimestampDiff(0));
 
   // Let the helper access the GL context information.
-  return helper_.Open(cc);
+  MP_RETURN_IF_ERROR(helper_.Open(cc));
+
+  MP_RETURN_IF_ERROR(LoadOptions(cc));
+
+  invert_mask_ = true;
+  adjust_with_luminance_ = true;
+  return absl::OkStatus();
 }
 
 absl::Status RenderGPUBufferToCanvasCalculator::Process(CalculatorContext* cc) {
-  return RunInGlContext([this, cc]() -> absl::Status {
-    const auto& input = TagOrIndex(cc->Inputs(), "VIDEO", 0).Get<GpuBuffer>();
-    if (!initialized_) {
-      MP_RETURN_IF_ERROR(GlSetup());
-      initialized_ = true;
-    }
+  MP_RETURN_IF_ERROR(
+    RunInGlContext([this, cc]() -> absl::Status {
+      if (!initialized_) {
+        MP_RETURN_IF_ERROR(GlSetup());
+        initialized_ = true;
+      }
 
-    auto src = helper_.CreateSourceTexture(input);
-    int dst_width;
-    int dst_height;
-    GetOutputDimensions(src.width(), src.height(), &dst_width, &dst_height);
-    auto dst = helper_.CreateDestinationTexture(dst_width, dst_height,
-                                                GetOutputFormat());
+      if (cc->Inputs().Tag(kMaskGpuTag).IsEmpty()) {
+        cc->Outputs()
+          .Tag("VIDEO")
+          .AddPacket(cc->Inputs().Tag("VIDEO").Value()); // input is passed on to output, but will not go through rendering
+        LOG(INFO) << "RenderGPUBufferToCanvasCalculator::Process mask not received";
+        return absl::OkStatus();
+      }
 
-    helper_.BindFramebuffer(dst);
-    glActiveTexture(GL_TEXTURE1);
-    glBindTexture(src.target(), src.name());
+      const auto& input = TagOrIndex(cc->Inputs(), "VIDEO", 0).Get<GpuBuffer>();
+      const auto& mask_buffer = TagOrIndex(cc->Inputs(), kMaskGpuTag, 1).Get<GpuBuffer>();
 
-    MP_RETURN_IF_ERROR(GlBind());
-    // Run core program.
-    MP_RETURN_IF_ERROR(GlRender(src, dst));
+      auto src = helper_.CreateSourceTexture(input);
+      auto mask_tex = helper_.CreateSourceTexture(mask_buffer);
 
-    glBindTexture(src.target(), 0);
+      int dst_width;
+      int dst_height;
+      GetOutputDimensions(src.width(), src.height(), &dst_width, &dst_height);
+      auto dst = helper_.CreateDestinationTexture(dst_width, dst_height,
+                                                  GetOutputFormat());
 
-    glFlush();
+      helper_.BindFramebuffer(dst);
+      glActiveTexture(GL_TEXTURE1);
+      glBindTexture(src.target(), src.name());
 
-    auto output = dst.GetFrame<GpuBuffer>();
+      glActiveTexture(GL_TEXTURE2);
+      glBindTexture(mask_tex.target(), mask_tex.name());
 
-    src.Release();
-    dst.Release();
+      MP_RETURN_IF_ERROR(GlBind()); // does nothing and returns absl::OkStatus()
+      // Run core program.
+      MP_RETURN_IF_ERROR(GlRender()); // (src, dst));
 
-    TagOrIndex(&cc->Outputs(), "VIDEO", 0)
-        .Add(output.release(), cc->InputTimestamp());
+      glActiveTexture(GL_TEXTURE1);
+      // glBindTexture(src.target(), 0); // works even after commenting out
+      glBindTexture(GL_TEXTURE_2D, 0);
+      glActiveTexture(GL_TEXTURE2);
+      glBindTexture(GL_TEXTURE_2D, 0);
 
-    return absl::OkStatus();
-  });
+      glFlush();
+
+      auto output = dst.GetFrame<GpuBuffer>();
+
+      src.Release();
+      dst.Release();
+      mask_tex.Release();
+
+      TagOrIndex(&cc->Outputs(), "VIDEO", 0)
+          .Add(output.release(), cc->InputTimestamp());
+
+      return absl::OkStatus();
+    })
+  );
+
+  return absl::OkStatus();
 }
 
 absl::Status RenderGPUBufferToCanvasCalculator::Close(CalculatorContext* cc) {
@@ -139,6 +189,8 @@ absl::Status RenderGPUBufferToCanvasCalculator::Close(CalculatorContext* cc) {
 }
 
 absl::Status RenderGPUBufferToCanvasCalculator::GlSetup() {
+  // ~GlSetup() of SimpleGlCalculator ~InitGpu() of RecolorCalculator
+
   LOG(INFO) << "RenderGPUBufferToCanvasCalculator::GlSetup NUM_ATTRIBUTES:" << NUM_ATTRIBUTES << " ATTRIB_VERTEX:" << ATTRIB_VERTEX << " ATTRIB_TEXTURE_POSITION:" << ATTRIB_TEXTURE_POSITION << "\n";
 
   const GLint attr_location[NUM_ATTRIBUTES] = {
@@ -150,6 +202,9 @@ absl::Status RenderGPUBufferToCanvasCalculator::GlSetup() {
       "position",
       "texture_coordinate",
   };
+
+  std::string mask_component = "r"; // todo implement options similar to RecolorCalculator
+
 
   const GLchar* frag_src = GLES_VERSION_COMPAT
       R"(
@@ -168,19 +223,44 @@ absl::Status RenderGPUBufferToCanvasCalculator::GlSetup() {
     out vec4 fragColor;
   #endif  // defined(GL_ES)
 
+    #define MASK_COMPONENT a
+
     in vec2 sample_coordinate;
     uniform sampler2D video_frame;
+    uniform sampler2D mask;
+    uniform vec3 recolor;
+    uniform float invert_mask;
+    uniform float adjust_with_luminance;
+
     const highp vec3 W = vec3(0.2125, 0.7154, 0.0721);
 
     void main() {
+      vec4 weight = texture2D(mask, sample_coordinate); // Q copying from mask? what is the purpose of sample_coordinate
+      vec4 color2 = vec4(recolor, 1.0); // Q color2 has 3 elements of recolor + 1?
       vec4 color = texture2D(video_frame, sample_coordinate);
+      weight = mix(weight, 1.0 - weight, invert_mask);
+
+      vec4 color3 = vec4(color.rgb, 0.4);
+
+
+      float luminance = mix(1.0,
+                            dot(color.rgb, vec3(0.299, 0.587, 0.114)),
+                            adjust_with_luminance);
+
       // float luminance = dot(color.rgb, W);
       // fragColor.rgb = vec3(luminance);
       // fragColor.rgb = vec3(0.0, 0.0, 1.0);
-      fragColor.rgb = color.rgb;
+      // fragColor.rgb = color.rgb;
+
+      float mix_value = weight.MASK_COMPONENT * luminance;
+      // float mix_value = 0.5;
 
       // fragColor.a = 1.0;
-      fragColor.a = color.a;
+      // fragColor.a = color.a;
+      // fragColor = color2; // create black image in canvas if mask given as input for video_frame
+      // fragColor = mix(color, color2, mix_value);
+      fragColor = mix(color, color3, mix_value);
+
     }
 
   )";
@@ -198,11 +278,15 @@ absl::Status RenderGPUBufferToCanvasCalculator::GlSetup() {
   
   RET_CHECK(program_) << "Problem initializing the program.";
   frame_ = glGetUniformLocation(program_, "video_frame");
+  mask_ = glGetUniformLocation(program_, "mask");
+  recolor_ = glGetUniformLocation(program_, "recolor");
+  invertmask_ = glGetUniformLocation(program_, "invert_mask");
+  adjustwith_luminance_ = glGetUniformLocation(program_, "adjust_with_luminance");
   
   return absl::OkStatus();
 }
 
-absl::Status RenderGPUBufferToCanvasCalculator::GlRender(const GlTexture& src, const GlTexture& dst) {
+absl::Status RenderGPUBufferToCanvasCalculator::GlRender() { //(const GlTexture& src, const GlTexture& dst) {
   static const GLfloat square_vertices[] = {
       -1.0f, -1.0f,  // bottom left
       1.0f,  -1.0f,  // bottom right
@@ -219,8 +303,13 @@ absl::Status RenderGPUBufferToCanvasCalculator::GlRender(const GlTexture& src, c
   glBindFramebuffer(GL_FRAMEBUFFER, 0); // binding to canvas
 
   // program
-  glUseProgram(program_);
+  glUseProgram(program_); // Q do they return anything, can I call them once?
+  
   glUniform1i(frame_, 1);
+  glUniform1i(mask_, 2);
+  glUniform3f(recolor_, 1.0, 0.0, 0.0); // rgb, color mixing works
+  glUniform1f(invertmask_, invert_mask_? 1.0f: 0.0f); // no effect when mask 0, all r (or g or b)
+
 
   // vertex storage
   GLuint vbo[2];
@@ -362,8 +451,9 @@ class GraphContainer {
         node: {
           calculator: "RenderGPUBufferToCanvasCalculator"
           #input_stream: "VIDEO:output_video_with_segmentation"
-          #input_stream: "VIDEO:throttled_input_video"
-          input_stream: "VIDEO:segmentation_mask"
+          input_stream: "VIDEO:throttled_input_video"
+          #input_stream: "VIDEO:segmentation_mask"
+          input_stream: "MASK_GPU:segmentation_mask"
           output_stream: "VIDEO:output_video"
         }
       )pb";
