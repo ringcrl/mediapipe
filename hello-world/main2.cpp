@@ -22,12 +22,13 @@
 #include "mediapipe/gpu/shader_util.h"
 #include "mediapipe/framework/formats/detection.pb.h"
 #include "mediapipe/framework/formats/location_data.pb.h"
+#include "mediapipe/framework/formats/landmark.pb.h"
 
 using namespace emscripten;
 
 enum { ATTRIB_VERTEX, ATTRIB_TEXTURE_POSITION, NUM_ATTRIBUTES };
 constexpr char kMaskGpuTag[] = "MASK_GPU";
-
+constexpr char kBackgroundGpuTag[] = "BACKGROUND";
 
 namespace mediapipe {
 
@@ -72,7 +73,7 @@ class RenderGPUBufferToCanvasCalculator: public CalculatorBase {
   absl::Status LoadOptions(CalculatorContext* cc);
   
   GLuint program_ = 0;
-  GLint frame_, mask_, recolor_, invertmask_, adjustwith_luminance_;
+  GLint frame_, mask_, recolor_, invertmask_, adjustwith_luminance_, background_;
   std::vector<uint8> color_;
   bool invert_mask_ = false;
   bool adjust_with_luminance_ = false;
@@ -93,10 +94,15 @@ absl::Status RenderGPUBufferToCanvasCalculator::GetContract(CalculatorContract* 
   RET_CHECK(!cc->Outputs().GetTags().empty());
 
   TagOrIndex(&cc->Inputs(), "VIDEO", 0).Set<GpuBuffer>();
+
   TagOrIndex(&cc->Outputs(), "VIDEO", 0).Set<GpuBuffer>();
 
   if (cc->Inputs().HasTag(kMaskGpuTag)) {
     cc->Inputs().Tag(kMaskGpuTag).Set<mediapipe::GpuBuffer>();
+  }
+
+  if (cc->Inputs().HasTag(kBackgroundGpuTag)) {
+    TagOrIndex(&cc->Inputs(), kBackgroundGpuTag, 0).Set<GpuBuffer>();
   }
 
   // Currently we pass GL context information and other stuff as external
@@ -139,10 +145,12 @@ absl::Status RenderGPUBufferToCanvasCalculator::Process(CalculatorContext* cc) {
 
       const auto& input = TagOrIndex(cc->Inputs(), "VIDEO", 0).Get<GpuBuffer>();
       const auto& mask_buffer = TagOrIndex(cc->Inputs(), kMaskGpuTag, 1).Get<GpuBuffer>();
+      const auto& background_buffer = TagOrIndex(cc->Inputs(), kBackgroundGpuTag, 2).Get<GpuBuffer>();
 
       auto src = helper_.CreateSourceTexture(input);
       auto mask_tex = helper_.CreateSourceTexture(mask_buffer);
-
+      auto background_tex = helper_.CreateSourceTexture(background_buffer);
+    
       int dst_width;
       int dst_height;
       GetOutputDimensions(src.width(), src.height(), &dst_width, &dst_height);
@@ -150,11 +158,16 @@ absl::Status RenderGPUBufferToCanvasCalculator::Process(CalculatorContext* cc) {
                                                   GetOutputFormat());
 
       helper_.BindFramebuffer(dst);
+
       glActiveTexture(GL_TEXTURE1);
       glBindTexture(src.target(), src.name());
 
       glActiveTexture(GL_TEXTURE2);
       glBindTexture(mask_tex.target(), mask_tex.name());
+
+      glActiveTexture(GL_TEXTURE3);
+      glBindTexture(background_tex.target(), background_tex.name());
+
 
       MP_RETURN_IF_ERROR(GlBind()); // does nothing and returns absl::OkStatus()
       // Run core program.
@@ -165,7 +178,8 @@ absl::Status RenderGPUBufferToCanvasCalculator::Process(CalculatorContext* cc) {
       glBindTexture(GL_TEXTURE_2D, 0);
       glActiveTexture(GL_TEXTURE2);
       glBindTexture(GL_TEXTURE_2D, 0);
-
+      glActiveTexture(GL_TEXTURE3);
+      glBindTexture(GL_TEXTURE_2D, 0);
       glFlush();
 
       auto output = dst.GetFrame<GpuBuffer>();
@@ -191,7 +205,7 @@ absl::Status RenderGPUBufferToCanvasCalculator::Close(CalculatorContext* cc) {
 absl::Status RenderGPUBufferToCanvasCalculator::GlSetup() {
   // ~GlSetup() of SimpleGlCalculator ~InitGpu() of RecolorCalculator
 
-  LOG(INFO) << "RenderGPUBufferToCanvasCalculator::GlSetup NUM_ATTRIBUTES:" << NUM_ATTRIBUTES << " ATTRIB_VERTEX:" << ATTRIB_VERTEX << " ATTRIB_TEXTURE_POSITION:" << ATTRIB_TEXTURE_POSITION << "\n";
+  // LOG(INFO) << "RenderGPUBufferToCanvasCalculator::GlSetup NUM_ATTRIBUTES:" << NUM_ATTRIBUTES << " ATTRIB_VERTEX:" << ATTRIB_VERTEX << " ATTRIB_TEXTURE_POSITION:" << ATTRIB_TEXTURE_POSITION << "\n";
 
   const GLint attr_location[NUM_ATTRIBUTES] = {
       ATTRIB_VERTEX,
@@ -228,6 +242,7 @@ absl::Status RenderGPUBufferToCanvasCalculator::GlSetup() {
     in vec2 sample_coordinate;
     uniform sampler2D video_frame;
     uniform sampler2D mask;
+    uniform sampler2D background;
     uniform vec3 recolor;
     uniform float invert_mask;
     uniform float adjust_with_luminance;
@@ -240,7 +255,8 @@ absl::Status RenderGPUBufferToCanvasCalculator::GlSetup() {
       vec4 color = texture2D(video_frame, sample_coordinate);
       weight = mix(weight, 1.0 - weight, invert_mask);
 
-      vec4 color3 = vec4(color.rgb, 0.4);
+      // vec4 color3 = vec4(color.rgb, 0.4);
+      vec4 color3 = texture2D(background, sample_coordinate);
 
 
       float luminance = mix(1.0,
@@ -278,6 +294,7 @@ absl::Status RenderGPUBufferToCanvasCalculator::GlSetup() {
   
   RET_CHECK(program_) << "Problem initializing the program.";
   frame_ = glGetUniformLocation(program_, "video_frame");
+  background_ = glGetUniformLocation(program_, "background");
   mask_ = glGetUniformLocation(program_, "mask");
   recolor_ = glGetUniformLocation(program_, "recolor");
   invertmask_ = glGetUniformLocation(program_, "invert_mask");
@@ -307,6 +324,7 @@ absl::Status RenderGPUBufferToCanvasCalculator::GlRender() { //(const GlTexture&
   
   glUniform1i(frame_, 1);
   glUniform1i(mask_, 2);
+  glUniform1i(background_, 3);
   glUniform3f(recolor_, 1.0, 0.0, 0.0); // rgb, color mixing works
   glUniform1f(invertmask_, invert_mask_? 1.0f: 0.0f); // no effect when mask 0, all r (or g or b)
 
@@ -374,6 +392,17 @@ class BoundingBox {
   BoundingBox() {}
 };
 
+class LandMark {
+  public:
+  float x, y, z;
+  LandMark(float x, float y, float z) {
+    this->x = x;
+    this->y = y;
+    this->z = z;
+  }
+  LandMark() {}
+};
+
 
 class GraphContainer {
   public:
@@ -385,21 +414,29 @@ class GraphContainer {
   int runCounter;
   std::vector<mediapipe::Packet> output_packets;
 
-  uint8* data;
+  uint8* data, * data_mask;
 
   int* prvTemp;
   std::vector<BoundingBox> boundingBoxes;
-  
+  std::vector<LandMark> facesLandmarks;
+
   std::string graphConfigWithRender = R"pb(
         input_stream: "input_video"
+        input_stream: "input_background"
         input_side_packet: "MODEL_SELECTION:model_selection"
         output_stream: "output_video"
-        # output_stream: "face_detections"
+        output_stream: "face_detections"
         output_stream: "segmentation_mask"
         output_stream: "output_video_with_segmentation"
+        output_stream: "multi_face_landmarks"
+
         max_queue_size: 5
 
-        
+        node: {
+          calculator: "ImageFrameToGpuBufferCalculator"
+          input_stream: "input_background"
+          output_stream: "input_background_gpubuffer"
+        }
 
         node: {
           calculator: "ImageFrameToGpuBufferCalculator"
@@ -410,13 +447,38 @@ class GraphContainer {
         node {
           calculator: "FlowLimiterCalculator"
           input_stream: "input_gpubuffer"
+          input_stream: "input_background_gpubuffer"
           input_stream: "FINISHED:output_video"
           input_stream_info: {
             tag_index: "FINISHED"
             back_edge: true
           }
           output_stream: "throttled_input_video"
+          output_stream: "throttled_input_background"
         }
+
+        # Defines side packets for further use in the graph.
+        node {
+          calculator: "ConstantSidePacketCalculator"
+          output_side_packet: "PACKET:num_faces"
+          node_options: {
+            [type.googleapis.com/mediapipe.ConstantSidePacketCalculatorOptions]: {
+              packet { int_value: 1 }
+            }
+          }
+        }
+
+        # Subgraph that detects faces and corresponding landmarks.
+        node {
+          calculator: "FaceLandmarkFrontGpu"
+          input_stream: "IMAGE:throttled_input_video"
+          input_side_packet: "NUM_FACES:num_faces"
+          output_stream: "LANDMARKS:multi_face_landmarks"
+          output_stream: "ROIS_FROM_LANDMARKS:face_rects_from_landmarks"
+          output_stream: "DETECTIONS:face_detections2"
+          output_stream: "ROIS_FROM_DETECTIONS:face_rects_from_detections"
+        }
+        
       
         # Converts RGB images into luminance images, still stored in RGB format.
         # Subgraph that detects faces.
@@ -441,7 +503,7 @@ class GraphContainer {
         #  node_options: {
         #    [type.googleapis.com/mediapipe.RecolorCalculatorOptions] {
         #      color { r: 0 g: 0 b: 255 }
-        #      mask_channel: RED
+        #      mask_channel: ALPHA
         #      invert_mask: true
         #      adjust_with_luminance: false
         #    }
@@ -452,6 +514,7 @@ class GraphContainer {
           calculator: "RenderGPUBufferToCanvasCalculator"
           #input_stream: "VIDEO:output_video_with_segmentation"
           input_stream: "VIDEO:throttled_input_video"
+          input_stream: "BACKGROUND:throttled_input_background"
           #input_stream: "VIDEO:segmentation_mask"
           input_stream: "MASK_GPU:segmentation_mask"
           output_stream: "VIDEO:output_video"
@@ -473,28 +536,47 @@ class GraphContainer {
     MP_RETURN_IF_ERROR(graph.SetGpuResources(gpu_resources));
     gpu_helper.InitializeForTest(graph.GetGpuResources().get());
     graph.ObserveOutputStream("output_video", [this](const mediapipe::Packet& p) {
-      // LOG(INFO) << "observing packet in output_video output stream";
-      // LOG(INFO) << "inside lambda func: packet.Get<std::string>():" << p.Get<std::string>();
       return absl::OkStatus();
     });
 
+    // facesLandmarks.resize(1);
+    facesLandmarks.resize(468);
+    graph.ObserveOutputStream("multi_face_landmarks", [this](const mediapipe::Packet& p) {
+      const auto & faces = p.Get<std::vector<mediapipe::NormalizedLandmarkList>>();
+  
+      for (const auto & face: faces) {
+        int i = 0;
+        for (const auto& landmark : face.landmark()) {
+          facesLandmarks[i].x = landmark.x();
+          facesLandmarks[i].y = landmark.y();
+          facesLandmarks[i].z = landmark.z();
 
-    graph.ObserveOutputStream("segmentation_mask", [this](const mediapipe::Packet& p) {
-      const mediapipe::GpuBuffer & mask_buffer = p.Get<mediapipe::GpuBuffer>();
-      LOG(INFO) << "main2.cc mask_buffer width:" << mask_buffer.width() << " height:" << mask_buffer.height();
+          i ++;
+          // if (!i) LOG(INFO) << landmark.x() << " " << landmark.y() << " " << landmark.z();
+        }
+
+        LOG(INFO) << "landmarks:" << i;
+        break;
+      }
+
+      // LOG(INFO) << "main2.cc mask_buffer width:" << mask_buffer.width() << " height:" << mask_buffer.height();
       return absl::OkStatus();
     });
 
-    boundingBoxes.resize(1);
+    // graph.ObserveOutputStream("segmentation_mask", [this](const mediapipe::Packet& p) {
+    //   const mediapipe::GpuBuffer & mask_buffer = p.Get<mediapipe::GpuBuffer>();
+    //   // LOG(INFO) << "main2.cc mask_buffer width:" << mask_buffer.width() << " height:" << mask_buffer.height();
+    //   return absl::OkStatus();
+    // });
+
     // graph.ObserveOutputStream("segmentation_mask", [this](const mediapipe::Packet& p) {
     //   const mediapipe::GpuBuffer & mask_buffer = p.Get<mediapipe::GpuBuffer>();
     // });
 
+    boundingBoxes.resize(1);
     graph.ObserveOutputStream("face_detections", [this](const mediapipe::Packet& p) {
       const auto& detections = p.Get<std::vector<mediapipe::Detection>>();
-
       const int n = detections.size();
-
       this->boundingBoxes.resize(n);
       float xmin, ymin, width, height;
 
@@ -512,15 +594,14 @@ class GraphContainer {
           this->boundingBoxes[i].width = width;
           this->boundingBoxes[i].height = height;
         }
-
         LOG(INFO) <<  "main2.cc xmin:" << xmin << " ymin:" << ymin << " width:" << width << " height:" << height;
       }
 
-      LOG(INFO) << "main2.cc detections size:" << n;
+      // LOG(INFO) << "main2.cc detections size:" << n;
 
-      for (const mediapipe::Detection & d: detections) {
-        LOG(INFO) << "main2.cc has_detection_id:" << d.has_detection_id(); // << " detection_id:" << d.detection_id() << " score:" << d.score();
-      }
+      // for (const mediapipe::Detection & d: detections) {
+      //   LOG(INFO) << "main2.cc has_detection_id:" << d.has_detection_id(); // << " detection_id:" << d.detection_id() << " score:" << d.score();
+      // }
 
       return absl::OkStatus();
     });
@@ -552,7 +633,8 @@ class GraphContainer {
 
   GraphContainer(uint32 maxWidth, uint32 maxHeight) {  
     data = (uint8*)malloc(4*480*640);
-    
+    data_mask = (uint8*)malloc(4*480*640);
+
     absl::Status status = this->init();
     if (!status.ok()) {
       LOG(ERROR) << status;
@@ -561,6 +643,7 @@ class GraphContainer {
 
   GraphContainer() {  
     data = (uint8*)malloc(4*480*640);
+    data_mask = (uint8*)malloc(4*480*640);
 
     absl::Status status = this->init();
     if (!status.ok()) {
@@ -568,6 +651,98 @@ class GraphContainer {
     }
   }
 
+absl::Status webglCanvasDrawWithMask(uint8* imgData, uint8* maskData, int imgSize) {
+
+    uint8* imgPtr = imgData;
+    uint8* maskPtr = maskData;
+
+    for (int ptr = 0; ptr < imgSize; ptr += 4) {
+        // rgba
+        data[ptr] = *imgPtr;
+        imgPtr ++;
+        data[ptr + 1] = *imgPtr;
+        imgPtr ++;
+        data[ptr + 2] = *imgPtr; //(255*w) / 500;
+        imgPtr ++;
+        data[ptr + 3] = *imgPtr; 
+        imgPtr ++;
+    }
+
+    for (int ptr = 0; ptr < imgSize; ptr += 4) {
+        // rgba
+        data_mask[ptr] = *imgPtr;
+        imgPtr ++;
+        data_mask[ptr + 1] = *imgPtr;
+        imgPtr ++;
+        data_mask[ptr + 2] = *imgPtr; //(255*w) / 500;
+        imgPtr ++;
+        data_mask[ptr + 3] = *imgPtr; 
+        imgPtr ++;
+    }
+
+    auto imageFrame =
+        absl::make_unique<mediapipe::ImageFrame>(mediapipe::ImageFormat::SRGBA, 640, 480,
+                                    mediapipe::ImageFrame::kGlDefaultAlignmentBoundary);
+    int img_data_size = 640 * 480 * 4;
+    std::memcpy(imageFrame->MutablePixelData(), data,
+                img_data_size);
+
+    auto imageFrameMask =
+        absl::make_unique<mediapipe::ImageFrame>(mediapipe::ImageFormat::SRGBA, 640, 480,
+                                    mediapipe::ImageFrame::kGlDefaultAlignmentBoundary);
+    std::memcpy(imageFrameMask->MutablePixelData(), data_mask,
+                img_data_size);
+
+
+
+
+    size_t frame_timestamp_us = runCounter * 1e6;
+    runCounter ++;
+
+    MP_RETURN_IF_ERROR(          
+      graph.AddPacketToInputStream(
+        "input_video",
+        mediapipe::Adopt(
+          imageFrame.release()
+        ).At(
+          mediapipe::Timestamp(frame_timestamp_us)
+        )
+      )
+    ); 
+
+    MP_RETURN_IF_ERROR(          
+      graph.AddPacketToInputStream(
+        "input_background",
+        // "input_video",
+        mediapipe::Adopt(
+          imageFrameMask.release()
+        ).At(
+          mediapipe::Timestamp(frame_timestamp_us)
+        )
+      )
+    ); 
+
+    MP_RETURN_IF_ERROR(
+      gpu_helper.RunInGlContext(
+        [this]() -> absl::Status {
+          
+          glFlush();
+          
+          MP_RETURN_IF_ERROR(
+            this->graph.WaitUntilIdle()
+          );
+
+          return absl::OkStatus();
+        }
+      )
+    );
+
+    // delete imageFrame;
+    // delete data;
+    
+    // MP_RETURN_IF_ERROR(graph.WaitUntilDone());
+    return absl::OkStatus();
+  }
 
   absl::Status webglCanvasDraw(uint8* imgData, int imgSize) {
 
@@ -584,7 +759,7 @@ class GraphContainer {
     if (w == 500 || w == 0) direction = -direction;
 
     // LOG(INFO) << "w:" << w;
-    LOG(INFO) << "imgSize:" << imgSize << "(4*480*640):" << (4*480*640);
+    // LOG(INFO) << "imgSize:" << imgSize << "(4*480*640):" << (4*480*640);
 
     for (int ptr = 0; ptr < imgSize; ptr += 4) {
         // rgba
@@ -641,9 +816,20 @@ class GraphContainer {
   }
 
   std::string run(uintptr_t imgData, int imgSize) {
-    // absl::Status status = this->webglCanvasDraw(imgData, imgSize);
-
     absl::Status status = this->webglCanvasDraw(reinterpret_cast<uint8*>(imgData), imgSize);
+
+    if (!status.ok()) {
+      LOG(WARNING) << "Unexpected error " << status;
+    }
+
+    return status.ToString();
+  }
+
+std::string runWithMask(uintptr_t imgData, uintptr_t maskData, int imgSize) {
+    absl::Status status = this->webglCanvasDrawWithMask(
+      reinterpret_cast<uint8*>(imgData), 
+      reinterpret_cast<uint8*>(maskData), 
+      imgSize);
 
     if (!status.ok()) {
       LOG(WARNING) << "Unexpected error " << status;
@@ -674,7 +860,9 @@ EMSCRIPTEN_BINDINGS(Hello_World_Simple) {
     .constructor()
     .constructor<int, int>()
     .function("run", &GraphContainer::run)
+    .function("runWithMask", &GraphContainer::runWithMask)
     .property("boundingBoxes", &GraphContainer::boundingBoxes)
+    .property("facesLandmarks", &GraphContainer::facesLandmarks)
     ;
   class_<BoundingBox>("BoundingBox")
     // .constructor<float, float, float, float>()
@@ -683,6 +871,12 @@ EMSCRIPTEN_BINDINGS(Hello_World_Simple) {
     .property("width", &BoundingBox::width)
     .property("height", &BoundingBox::height)
     ;
+  class_<LandMark>("LandMark")
+    .property("x", &LandMark::x)
+    .property("y", &LandMark::y)
+    .property("z", &LandMark::z)
+    ;
   register_vector<BoundingBox>("vector<BoundingBox>");
+  register_vector<LandMark>("vector<LandMark>");
   
 }

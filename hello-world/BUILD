@@ -71,6 +71,8 @@ cc_binary(
         # "--preload-file /home/pinku/work/src/github.com/prantoran/mediapipe/mediapipe/@mediapipe/",
         "--preload-file /home/pinku/work/src/github.com/prantoran/mediapipe/mediapipe/modules/selfie_segmentation/selfie_segmentation.tflite@mediapipe/modules/selfie_segmentation/selfie_segmentation.tflite",
         "--preload-file /home/pinku/work/src/github.com/prantoran/mediapipe/mediapipe/modules/selfie_segmentation/selfie_segmentation_landscape.tflite@mediapipe/modules/selfie_segmentation/selfie_segmentation_landscape.tflite",
+        "--preload-file /home/pinku/work/src/github.com/prantoran/mediapipe/mediapipe/modules/face_landmark/face_landmark.tflite@mediapipe/modules/face_landmark/face_landmark.tflite",
+
     ],
     visibility = ["//visibility:public"],
     deps = [
@@ -95,6 +97,11 @@ cc_binary(
         "//mediapipe/modules/selfie_segmentation:selfie_segmentation_gpu",
         "//mediapipe/calculators/image:recolor_calculator",
         "//mediapipe/graphs/selfie_segmentation:selfie_segmentation_gpu_deps",
+        # face mesh
+        "//mediapipe/calculators/core:constant_side_packet_calculator",
+        "//mediapipe/graphs/face_mesh/subgraphs:face_renderer_gpu",
+        "//mediapipe/modules/face_landmark:face_landmark_front_gpu",
+        "//mediapipe/framework/formats:landmark_cc_proto",
     ],
 )
 
