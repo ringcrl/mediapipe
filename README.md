@@ -1,8 +1,3 @@
----
-layout: default
-title: Home
-nav_order: 1
----
 
 <!-- ![GSOC](docs/images/gsoc.png) -->
 ![MediaPipe](docs/images/mediapipe_small.png) 
