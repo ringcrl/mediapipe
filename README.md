@@ -14,3 +14,7 @@
 - From the root directory of the project, run the command in the terminal:
     - `make build && make run`
     - The scripts that are executed are in `scripts/...` and `Makefile`.
+    - `make build` compiles the WASM binaries:
+        - `bazel build -c opt //hello-world:hello-world-simple --config=wasm`
+    - `make run` copies the required outputs and runs a NodeJS server to run the WASM binaries locally.
+        - Output files are copied from `bazel-out/wasm-opt/bin/hello-world/...`
