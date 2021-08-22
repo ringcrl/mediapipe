@@ -79,23 +79,23 @@ cc_binary(
         # ":canvas_renderer",
         "//hello-world/cpp:popen",
         "//mediapipe/calculators/core:pass_through_calculator",
+        "//mediapipe/calculators/image:recolor_calculator",
         "//mediapipe/framework:calculator_graph",
+        "//mediapipe/framework:calculator_framework",
         "//mediapipe/framework/port:logging",
         "//mediapipe/framework/port:parse_text_proto",
         "//mediapipe/framework/port:status",
+        "//mediapipe/framework/formats:detection_cc_proto",
+        "//mediapipe/framework/formats:location_data_cc_proto",
+        "//mediapipe/framework/formats:image_frame",
         "//mediapipe/gpu:gpu_buffer",
         "//mediapipe/gpu:gpu_shared_data_internal",
         "//mediapipe/gpu:gl_calculator_helper",
         "//mediapipe/gpu:image_frame_to_gpu_buffer_calculator",
-        "//mediapipe/framework:calculator_framework",
-        "//mediapipe/framework/formats:image_frame",
         "//mediapipe/gpu:gl_simple_calculator",
         "//mediapipe/gpu:gl_simple_shaders",
-        "//mediapipe/framework/formats:detection_cc_proto",
-        "//mediapipe/framework/formats:location_data_cc_proto",
         "//mediapipe/modules/face_detection:face_detection_short_range_gpu",
         "//mediapipe/modules/selfie_segmentation:selfie_segmentation_gpu",
-        "//mediapipe/calculators/image:recolor_calculator",
         "//mediapipe/graphs/selfie_segmentation:selfie_segmentation_gpu_deps",
         # face mesh
         "//mediapipe/calculators/core:constant_side_packet_calculator",
@@ -303,30 +303,23 @@ cc_binary(
         "//mediapipe/calculators/util:filter_collection_calculator",
         "//mediapipe/modules/palm_detection:palm_detection_gpu",
         "//mediapipe/graphs/hand_tracking:mobile_calculators",
-        # "//mediapipe/framework/formats:image_frame_opencv",
+        # "//third_party:opencv",
+        # "//mediapipe/framework/formats:image_frame_opencv",  # opencv errs
+        # "//mediapipe/framework/formats:image_opencv",  # opencv errs
+        # "//mediapipe/framework/port:opencv_core",  # opencv errs
+        # "//mediapipe/framework/port:opencv_imgproc",  # opencv errs
+        # "//mediapipe/framework/port:opencv_highgui",  # opencv errs
+        # "//mediapipe/framework/port:opencv_video",  # opencv errs
+        # "//mediapipe/calculators/tensor:image_to_tensor_converter_opencv",  # opencv errs
+        # "//mediapipe/calculators/video:opencv_video_decoder_calculator",  # opencv errs
+        # "//mediapipe/calculators/video:opencv_video_encoder_calculator",  # opencv errs
         # "//mediapipe/examples/desktop:demo_run_graph_main_gpu",
         # "//mediapipe/framework/port:status_matchers",
         # "//mediapipe/framework/deps:status_matchers",
         # "//mediapipe/framework/port:gtest_main",
-        # "//third_party:opencv",
-        # "//mediapipe/framework/port:opencv_core",
-        # "//mediapipe/framework/formats:image_frame_opencv",
-        # "//mediapipe/calculators/video:opencv_video_decoder_calculator",
         # "//mediapipe/graphs/hand_tracking:desktop_offline_calculators",
         # "//mediapipe/graphs/hand_tracking:desktop_tflite_calculators",
-        # "//mediapipe/framework/formats:image_frame_opencv",  # opencv errs
-        # "//mediapipe/framework/port:opencv_core",  # opencv errs
-        # "//mediapipe/framework/formats:image_opencv",  # opencv errs
-        # "//mediapipe/framework/port:opencv_imgproc",  # opencv errs
-        # "//mediapipe/calculators/tensor:image_to_tensor_converter_opencv",  # opencv errs
-        # "//mediapipe/framework/port:opencv_highgui",  # opencv errs
-        # "//mediapipe/framework/port:opencv_video",  # opencv errs
-        # "//mediapipe/calculators/video:opencv_video_decoder_calculator",  # opencv errs
-        # "//mediapipe/calculators/video:opencv_video_encoder_calculator",  # opencv errs
-        # "//mediapipe/calculators/tensor:tensors_to_classification_calculator",
         # "//mediapipe/modules/hand_landmark:hand_landmark_gpu",
-        # "//mediapipe/modules/hand_landmark:hand_landmark_tracking_gpu",
-        # "//mediapipe/graphs/hand_tracking/subgraphs:hand_renderer_gpu",
     ],
 )
 
