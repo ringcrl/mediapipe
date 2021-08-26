@@ -550,12 +550,8 @@ class GraphContainer {
           facesLandmarks[i].x = landmark.x();
           facesLandmarks[i].y = landmark.y();
           facesLandmarks[i].z = landmark.z();
-
           i ++;
-          // if (!i) LOG(INFO) << landmark.x() << " " << landmark.y() << " " << landmark.z();
         }
-
-        LOG(INFO) << "landmarks:" << i;
         break;
       }
 
@@ -594,10 +590,8 @@ class GraphContainer {
           this->boundingBoxes[i].width = width;
           this->boundingBoxes[i].height = height;
         }
-        LOG(INFO) <<  "main2.cc xmin:" << xmin << " ymin:" << ymin << " width:" << width << " height:" << height;
       }
 
-      // LOG(INFO) << "main2.cc detections size:" << n;
 
       // for (const mediapipe::Detection & d: detections) {
       //   LOG(INFO) << "main2.cc has_detection_id:" << d.has_detection_id(); // << " detection_id:" << d.detection_id() << " score:" << d.score();

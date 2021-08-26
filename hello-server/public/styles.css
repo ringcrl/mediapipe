@@ -33,6 +33,10 @@ margin: 0;
 flex: 1;
 }
 
+.card-container button {
+    text-align: center;
+}
+
 .toolbar span {
     text-align: left;
     padding-top: 0.3em;
