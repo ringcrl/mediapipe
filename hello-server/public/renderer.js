@@ -75,16 +75,18 @@ function runGraph(state, videoElem, Module) {
     const camera = new Camera(videoElem, {
         onFrame: async () => {
             state.canvasCtx.drawImage(videoElem, 0, 0, 640, 480);
+            state.canvasDirectInputOutputCtx.drawImage(videoElem, 0, 0, 640, 480);
+
             const rawData = state.canvasCtx.getImageData(0, 0, 640, 480);
             const rawDataSize = state.imgChannelsCount * rawData.width * rawData.height;
             // console.log("rawData:", rawData, "rawDataSize:", rawDataSize);
-            
-            state.canvasCtxOutput.clearRect(0, 0, state.canvasElementOutput.width, state.canvasElementOutput.height);
-            
-            console.log("state.canvasCtxGL.canvas:", state.canvasCtxGL.canvas);
-            console.log("state.canvasCtxGL:", state.canvasCtxGL);
-            
-            state.canvasCtxOutput.drawImage(state.canvasCtxGL.canvas, 0, 0, 640, 480);
+
+            state.canvasCtxOutput.clearRect(0, 0, state.canvasElementOverlay.width, state.canvasElementOverlay.height);
+
+            // console.log("state.canvasCtxGL.canvas:", state.canvasCtxGL.canvas);
+            // console.log("state.canvasCtxGL:", state.canvasCtxGL);
+
+            // state.canvasCtxOutput.drawImage(state.canvasCtxGL.canvas, 0, 0, 640, 480);
 
             if (!state.imgSize || state.imgSize != rawDataSize) {
 
@@ -159,34 +161,45 @@ function runGraph(state, videoElem, Module) {
 window.onload = function () {
 
     const videoElement = document.getElementById('input_video');
-    // videoElement.msHorizontalMirror = true;
-    // videoElement.style.display = "none";
+    videoElement.style.width = "100%";
 
-    state.canvasElement = document.getElementById('input_video_canvas');
-    state.canvasElement.style.width = 640 + "px";
-    state.canvasElement.style.height = 480 + "px";
-    state.canvasElement.style.display = "none";
-    state.canvasCtx = state.canvasElement.getContext('2d');
+
+    const videoContainer = document.getElementById("input_video_container");
+    videoContainer.width = "100%";
+    const videoContainerOuput = document.getElementById("output_video_container");
+    videoContainerOuput.width = "100%";
+
+    state.canvasElementInput = document.getElementById('input_video_canvas');
+    state.canvasElementInput.style.position = "absolute";
+    state.canvasElementInput.style.width = "100%";
+    state.canvasElementInput.style.top = "1.6em";
+    state.canvasElementInput.style.left = "0";
+    state.canvasCtx = state.canvasElementInput.getContext('2d');
 
     state.canvasMaskElement = document.getElementById('mask_canvas');
-    state.canvasMaskElement.style.width = 640 + "px";
-    state.canvasMaskElement.style.height = 480 + "px";
+    state.canvasMaskElement.style.width = "100%";
     state.canvasMaskElement.style.display = "none";
     state.maskCtx = state.canvasMaskElement.getContext('2d');
+    
 
-
-
-    state.canvasElementOutput = document.getElementById('output_canvas');
-    state.canvasElementOutput.style.width = 640 + "px";
-    state.canvasElementOutput.style.height = 480 + "px";
-    state.canvasElementOutput.style.display = "block";
-    state.canvasCtxOutput = state.canvasElementOutput.getContext('2d');
+    state.canvasDirectInputOutput = document.getElementById("direct_input_ouput");
+    state.canvasDirectInputOutput.style.postion = "absolute";
+    state.canvasDirectInputOutput.style.width = "100%";
+    state.canvasDirectInputOutput.style.top = "1.6em";
+    state.canvasDirectInputOutput.style.left = "0";
+    state.canvasDirectInputOutputCtx = state.canvasDirectInputOutput.getContext('2d');
 
     state.canvasGL = document.querySelector("#glCanvas");
+    state.canvasGL.style.postion = "absolute";
+    state.canvasGL.style.width = "100%";
+    state.canvasGL.style.top = "1.6em";
+    state.canvasGL.style.left = "0";
+    
+
     Module.canvas = state.canvasGL;
 
     // Initialize the GL context
-    state.canvasCtxGL = state.canvasGL.getContext("webgl2", {preserveDrawingBuffer: true});
+    state.canvasCtxGL = state.canvasGL.getContext("webgl2", { preserveDrawingBuffer: true });
 
     // Only continue if WebGL is available and working
     if (state.canvasCtxGL === null) {
@@ -202,18 +215,29 @@ window.onload = function () {
         },
         false
     );
-
+    
 
     // Set clear color to black, fully opaque
-    state.canvasCtxGL.clearColor(0.0, 1.0, 0.0, 0.5); // rgb alpha
+    state.canvasCtxGL.clearColor(25/255, 118/255, 210/255, 0.5); // rgb alpha
     // Clear the color buffer with specified clear color
     state.canvasCtxGL.clear(state.canvasCtxGL.COLOR_BUFFER_BIT);
 
 
+    state.canvasElementOverlay = document.getElementById('overlay_canvas');
+    state.canvasElementOverlay.style.position = "absolute";
+    state.canvasElementOverlay.style.width = "100%";
+    state.canvasElementOverlay.style.top = "1.6em";
+    state.canvasElementOverlay.style.left = "0";
+
+    state.canvasCtxOutput = state.canvasElementOverlay.getContext('2d');
+
+    console.log("state.canvasCtxOutput:", state.canvasCtxOutput, "state.canvasElementOverlay:", state.canvasElementOverlay, "style:", state.canvasElementOverlay.style, "top:", state.canvasElementOverlay.style.top, "left:", state.canvasElementOverlay.style.left);
     document.getElementById("btnRunGraph").onclick = function () {
+        document.getElementById("btnRunGraph").style.display = "none";
+        state.canvasDirectInputOutput.style.display = "";
         runGraph(state, videoElement, Module);
     }
-    
+
 
     document.getElementById("btnFaceMesh").onclick = function () {
         state.showFaceMesh = !state.showFaceMesh;
@@ -226,6 +250,11 @@ window.onload = function () {
 
     document.getElementById("btnFaceDetection").onclick = function () {
         state.detectFace = !state.detectFace;
+        if (state.detectFace) {
+            document.getElementById("btnFaceDetection").innerHTML = "<span>Enable Face Detection</span>";
+        } else {
+            document.getElementById("btnFaceDetection").innerHTML = "<span>Disable Face Detection</span>";
+        }
     }
 
     document.getElementById("btnSelfieSegmentation").onclick = function () {
@@ -233,9 +262,14 @@ window.onload = function () {
 
         console.log("entered state.selfieSegmentation", state.selfieSegmentation);
         if (state.selfieSegmentation) {
-            document.getElementById("selfie_segmentation_opts").style.display = "block";
+            state.canvasDirectInputOutput.style.display = "none";
+            state.canvasGL.style.display = "";
+            document.getElementById("selfie_segmentation_opts").style.display = "";
             console.log("showing");
         } else {
+            state.canvasDirectInputOutput.style.display = "";
+            state.canvasGL.style.display = "none";
+        
             document.getElementById("selfie_segmentation_opts").style.display = "none";
         }
 
@@ -279,16 +313,6 @@ window.onload = function () {
         } else {
             document.getElementById("mask_canvas").style.display = "none";
             document.getElementById("btnShowBackgroundSource").innerHTML = "<span>Show Background Source</span>";
-        }
-    }
-
-    document.getElementById("btnShowWebGL2Canvas").onclick = function(event) {
-        if (document.getElementById("glCanvas").style.display == "none") {
-            document.getElementById("glCanvas").style.display = "block";
-            document.getElementById("glCanvas").innerHTML = "<span>Hide WebGL2 Canvas</span>";
-        } else {
-            document.getElementById("glCanvas").style.display = "none";
-            document.getElementById("glCanvas").innerHTML = "<span>Show WebGL2 Canvas</span>";
         }
     }
 }

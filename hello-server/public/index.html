@@ -15,7 +15,6 @@
     integrity="sha384-JEW9xMcG8R+pH31jmWH6WWP0WintQrMb4s7ZOdauHnUtxwoG2vI5DkLtS3qm9Ekf"
     crossorigin="anonymous"></script>
 
-
   <link rel="icon" type="image/x-icon" href="favicon.ico">
 
   <script type="text/javascript">
@@ -32,26 +31,48 @@
 
   <script src="hello-world-simple.js"></script>
 
-  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
+  <script src="third_party/mediapipe/camera_utils/camera_utils.js"></script>
+  <!-- <script src="third_party/mediapipe/control_utils/control_utils.js"></script>
+<script src="third_party/mediapipe/drawing_utils/drawing_utils.js" crossorigin="anonymous"></script> -->
+  <!-- <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script> -->
 
-  
+
 
   <script type="module">
 
     // Find the latest version by visiting https://cdn.skypack.dev/three.
-  
+
     import * as THREE from 'https://cdn.skypack.dev/three@v0.131.3';
-  
+
     const scene = new THREE.Scene();
-  
+
   </script>
   <title>Video Effects WebApp</title>
 </head>
 
 <body>
   <div class="toolbar" role="banner">
-    <span>Welcome to MediaPipe GSOC 2021: Video Effects Web App</span>
-    <div class="spacer"></div>
+    <span>
+      <a href="https://summerofcode.withgoogle.com/projects/#4652144860332032">MediaPipe GSOC 2021: Video Effects Web
+        App</a>
+    </span>
+    <!-- <div class="spacer"></div> -->
+    <ul>
+      <li>
+        <a href="https://summerofcode.withgoogle.com/projects/#4652144860332032">
+          <img src="gsoc.png" style="width: 16em; height: 2em; margin-right: -0.05em;">
+          
+          </img>
+          2021
+        </a>
+      </li>
+      <li>
+        <a href="https://github.com/prantoran/mediapipe">
+          <img src="github.png" style="width: 2em; height: 2em;">
+          </img>
+        </a>
+      </li>
+    </ul>
   </div>
   <div class="content" role="main">
 
@@ -59,72 +80,80 @@
       </div>  -->
   </div>
 
-  <div class="row">
-
+  <div class="row" style="padding:2em;">
     <div class="col-md-4">
-      <div class="terminal">
-        <canvas id="output_canvas" width="640" height="480"></canvas>
-        <canvas id="glCanvas" width="640" height="480" style="display: none;"></canvas>
+      <div class="terminal" id="output_video_container">
+        <canvas class="output_canvas" id="direct_input_ouput" width="640px" height="480px" style="display: none;">
+        </canvas>
+        <canvas class="output_canvas" id="glCanvas" width="640px" height="480px" style="display: none;">
+        </canvas>
+        <canvas class="output_canvas" id="overlay_canvas" width="640px" height="480px">
+        </canvas>
       </div>
     </div>
-    <div class="col-md-4" id="video_container">
-      <div class="terminal">
-
-        <video id="input_video" autoplay="true" width="640px" height="480px"></video>
-        <canvas id="input_video_canvas" width="640px" height="480px" style="display: none;"></canvas>
+    <div class="col-md-4">
+      <div class="terminal" id="input_video_container">
+        <canvas class="input_canvas" id="input_video_canvas" width="640px" height="480px"></canvas>
+        <video id="input_video" width="640px" height="480px" autoplay="true" style="display: none;"></video>
         <canvas id="mask_canvas" width="640px" height="480px" style="display: none;"></canvas>
-
       </div>
     </div>
-    <div class="col-md-4">
-      <div class="card-container">
+    <div class="col-md-3">
+      <div class="row">
 
-        <button class="card card-small" value="Run Graph" id="btnRunGraph" tabindex="0">Run</button>
-        
-        <button class="card card-small" id="btnFaceMesh" tabindex="1">
-          <span>Show Face Mesh</span>
-        </button>
-        
-        <button class="card card-small" id="btnFaceDetection" tabindex="1">
-          <span>Face Detection</span>
-        </button>
+        <div class="card-container">
 
-        <button class="card card-small" id="btnSelfieSegmentation" tabindex="2">
-          <svg class="material-icons" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24">
-            <path d="M500 200h-6v6h-2v-6H5v-2h6V5h2v6h6v2z" />
-          </svg>
+          <button class="card card-small" value="Run Graph" id="btnRunGraph" tabindex="0">Run</button>
 
-          <span>Selfie Segmentation</span>
-        </button>
-        <button class="card card-small" id="btnShowBackgroundSource" tabindex="1">
-          <span>Show Background Source</span>
-        </button>
+          <button class="card card-small" id="btnFaceMesh" tabindex="1">
+            <span>Show Face Mesh</span>
+          </button>
 
-        <button class="card card-small" id="btnShowWebGL2Canvas" tabindex="1">
-          <span>Show WebGL2 Canvas</span>
-        </button>
+          <button class="card card-small" id="btnFaceDetection" tabindex="1">
+            <span>Enable Face Detection</span>
+          </button>
 
+          <button class="card card-small" id="btnSelfieSegmentation" tabindex="2">
+            <svg class="material-icons" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24">
+              <path d="M500 200h-6v6h-2v-6H5v-2h6V5h2v6h6v2z" />
+            </svg>
+
+            <span>Selfie Segmentation</span>
+          </button>
+          <button class="card card-small" id="btnShowBackgroundSource" tabindex="1">
+            <span>Show Background Source</span>
+          </button>
+
+        </div>
       </div>
-      <div class="card-container" id="selfie_segmentation_opts" style="display: none;">
-        <h4>Selfie Segmentation Options</h4>
-        <button class="card card-small" value="Set Background" id="btnSetBackground" tabindex="4">Set
-          Background Image</button>
-        <div id="background_input" style="display: none;">
-          <button class="card card-small"><label for="file" style="cursor: pointer;">Upload Image</label></button
-            class="card card-small">
-          <input type="file" accept="image/*" name="image" id="file" style="display: none;">
-          <img id="output" width="200" />
+
+      <div class="row" id="selfie_segmentation_opts" style="display: none;">
+        <h4>Segmentation Options</h4>
+        <div class="col-md-5">
+
+          <button class="card card-small" value="Set Background" id="btnSetBackground" tabindex="4">Set
+            Background Image</button>
+
+
+          <button class="card card-small" value="Set Background" id="btnSetBackgroundColor" tabindex="4">Set
+            Background Color</button>
+
         </div>
+        <div class="col-md-1"></div>
+        <div class="col-md-6">
 
+          <div id="background_input" style="display: none;">
+            <button class="card card-small"><label for="file" style="cursor: pointer;">Upload Image</label></button
+              class="card card-small">
+            <input type="file" accept="image/*" name="image" id="file" style="display: none;">
+            <img id="output" width="200" />
+          </div>
+          <div id="color_input" style="display: none;">
 
-        <button class="card card-small" value="Set Background" id="btnSetBackgroundColor" tabindex="4">Set
-          Background Color</button>
-        <div id="color_input" style="display: none;">
-
-          <label for="favcolor">Pick color:</label>
-          <input type="color" id="favcolor" name="favcolor" value="#ff0000"><br><br>
+            <label for="favcolor">Pick color:</label>
+            <input type="color" id="favcolor" name="favcolor" value="#ff0000"><br><br>
+          </div>
         </div>
-
       </div>
 
     </div>
