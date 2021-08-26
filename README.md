@@ -18,3 +18,7 @@
         - `bazel build -c opt //hello-world:hello-world-simple --config=wasm`
     - `make run` copies the required outputs and runs a NodeJS server to run the WASM binaries locally.
         - Output files are copied from `bazel-out/wasm-opt/bin/hello-world/...`
+
+## Live Demo
+- WASM versions of face detection, selfie segmentation and face mesh are demonstated in the following web app.
+- `https://prantoran.me/diapipe`
