@@ -100,18 +100,28 @@ function runGraph(state, videoElem, Module) {
                 const ret = state.graph.runWithMask(state.imgPointer, state.imgPointer, state.imgSize);
             }
 
-            const n = state.graph.facesLandmarks.size();
+            const n = 468; //state.graph.facesLandmarks.size();
             if (state.showFaceMesh && n > 0) {
                 
                 state.canvasCtxOutput.strokeStyle = "white";
                 state.canvasCtxOutput.lineWidth = 1;
-                state.canvasCtxOutput.globalAlpha = 0.1;
+                state.canvasCtxOutput.globalAlpha = 1.0;
 
                 state.canvasCtxOutput.beginPath();
                 for (let i = 0; i < FACEMESH_TESSELATION.length;i ++) {
-                    const u = state.graph.facesLandmarks.get(FACEMESH_TESSELATION[i][0]);
-                    const v = state.graph.facesLandmarks.get(FACEMESH_TESSELATION[i][1]);
+                    // let u = FACEMESH_TESSELATION[i][0]; //state.graph.facesLandmarks.get(FACEMESH_TESSELATION[i][0]);
+                    // let v = FACEMESH_TESSELATION[i][1] //state.graph.facesLandmarks.get(FACEMESH_TESSELATION[i][1]);
+                    // u = [0.1, 0.1]; //state.graph.facesLandmarks.get(FACEMESH_TESSELATION[i][0]);
+                    // v = [0.4, 0.4]; //state.graph.facesLandmarks.get(FACEMESH_TESSELATION[i][1]);
+                    // const u = state.graph.getFaceMeshLandMark(FACEMESH_TESSELATION[i][0]);
+                    // const v = state.graph.getFaceMeshLandMark(FACEMESH_TESSELATION[i][1]);
+                    const u = state.graph.getFaceMeshLandMark(FACEMESH_TESSELATION[i][0]);
+                    const v = state.graph.getFaceMeshLandMark(FACEMESH_TESSELATION[i][1]);
+
+
                     state.canvasCtxOutput.moveTo(u.x * rawData.width, u.y*rawData.height);
+
+
                     state.canvasCtxOutput.lineTo(v.x * rawData.width, v.y*rawData.height);
                     state.canvasCtxOutput.stroke();
                 }
@@ -282,16 +292,6 @@ window.onload = function () {
 
     document.getElementById("favcolor").onchange = function (event) {
         setBackgroundColor(event);
-    }
-
-    document.getElementById("btnShowBackgroundSource").onclick = function (event) {
-        if (document.getElementById("mask_canvas").style.display == "none") {
-            document.getElementById("mask_canvas").style.display = "block";
-            document.getElementById("btnShowBackgroundSource").innerHTML = "<span>Hide Background Source</span>";
-        } else {
-            document.getElementById("mask_canvas").style.display = "none";
-            document.getElementById("btnShowBackgroundSource").innerHTML = "<span>Show Background Source</span>";
-        }
     }
 }
 

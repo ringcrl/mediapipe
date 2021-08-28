@@ -418,7 +418,10 @@ class GraphContainer {
 
   int* prvTemp;
   std::vector<BoundingBox> boundingBoxes;
-  std::vector<LandMark> facesLandmarks;
+  // std::vector<LandMark> facesLandmarks;
+  LandMark * facesLandmarks;
+
+  float * facemesh_x, * facemesh_y, *facemesh_z;
 
   std::string graphConfigWithRender = R"pb(
         input_stream: "input_video"
@@ -522,6 +525,17 @@ class GraphContainer {
       )pb";
   
 
+  // float * get_facemesh_x() {return this->facemesh_x; }
+  // float * get_facemesh_y() {return this->facemesh_y; }
+  // float * get_facemesh_z() {return this->facemesh_z; }
+
+
+  LandMark getFaceMeshLandMark(int i) { return this->facesLandmarks[i]; }
+
+  // float getFaceMeshLandMark_x(int i) { return this->facemesh_x[i]; }
+  // float getFaceMeshLandMark_y(int i) { return this->facemesh_y[i]; }
+  // float getFaceMeshLandMark_z(int i) { return this->facemesh_z[i]; }
+
   absl::Status setupGraph() {
 
     mediapipe::CalculatorGraphConfig config =
@@ -540,7 +554,11 @@ class GraphContainer {
     });
 
     // facesLandmarks.resize(1);
-    facesLandmarks.resize(468);
+    // facesLandmarks.resize(468);
+    this->facesLandmarks = new LandMark[468];
+    // this->facemesh_x = new float[468];
+    // this->facemesh_y = new float[468];
+    // this->facemesh_z = new float[468];
     graph.ObserveOutputStream("multi_face_landmarks", [this](const mediapipe::Packet& p) {
       const auto & faces = p.Get<std::vector<mediapipe::NormalizedLandmarkList>>();
   
@@ -550,6 +568,9 @@ class GraphContainer {
           facesLandmarks[i].x = landmark.x();
           facesLandmarks[i].y = landmark.y();
           facesLandmarks[i].z = landmark.z();
+          // this->facemesh_x[i] = landmark.x();
+          // this->facemesh_y[i] = landmark.y();
+          // this->facemesh_z[i] = landmark.z();
           i ++;
         }
         break;
@@ -856,7 +877,14 @@ EMSCRIPTEN_BINDINGS(Hello_World_Simple) {
     .function("run", &GraphContainer::run)
     .function("runWithMask", &GraphContainer::runWithMask)
     .property("boundingBoxes", &GraphContainer::boundingBoxes)
-    .property("facesLandmarks", &GraphContainer::facesLandmarks)
+    // .property("facesLandmarks", &GraphContainer::facesLandmarks)
+    .function("getFaceMeshLandMark", &GraphContainer::getFaceMeshLandMark)
+    // .function("getFaceMeshLandMark_x", &GraphContainer::getFaceMeshLandMark_x)
+    // .function("getFaceMeshLandMark_y", &GraphContainer::getFaceMeshLandMark_y)
+    // .function("getFaceMeshLandMark_z", &GraphContainer::getFaceMeshLandMark_z)
+    // .property("facemesh_x", &GraphContainer::facemesh_x, allow_raw_pointers())
+    // .property("facemesh_y", &GraphContainer::facemesh_y, allow_raw_pointers())
+    // .property("facemesh_z", &GraphContainer::facemesh_z, allow_raw_pointers())
     ;
   class_<BoundingBox>("BoundingBox")
     // .constructor<float, float, float, float>()
